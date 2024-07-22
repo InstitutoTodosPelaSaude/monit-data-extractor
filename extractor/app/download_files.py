@@ -77,7 +77,7 @@ class EmailFileDownloader:
 
         for lab, emails in email_list.items():
             self.logger.info(f"Downloading files for {lab}")
-            lab_data_path = f'/data/{lab}'
+            lab_data_path = f'./../data/{lab}'
 
             if not os.path.exists(lab_data_path):
                 self.logger.warning(f"Unable to locate path {lab_data_path}. This is the path where the data would be saved. Skipping lab {lab}.")
@@ -118,6 +118,8 @@ class EmailFileDownloader:
                     data = base64.urlsafe_b64decode(attachment['data'].encode('UTF-8'))
                     buffer = io.BytesIO(data)
                     attachment_buffers.append((part['filename'], buffer, date, sender))
+
+        return attachment_buffers
 
 
     def save_attachments_in_folder(self, attachments, lab_name, path):
