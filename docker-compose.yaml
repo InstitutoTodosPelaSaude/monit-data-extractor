@@ -1,0 +1,7 @@
+version: '3'
+services:
+  extractor:
+    build: ./extractor 
+    volumes:
+      - ./extractor/app:/app
+      - ./extractor/data:/data
