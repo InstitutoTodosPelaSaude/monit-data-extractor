@@ -29,6 +29,7 @@ class EmailFileDownloader:
         self.email_list_file = 'emails.json' # json file containing a list of each labs' emails
         self.token_path      = 'token.json'  # json file containing the authorization token to the google API
         self.scopes          = ["https://www.googleapis.com/auth/gmail.readonly"]
+        self.last_download_time_file = 'last_download_time.txt'
 
         self.logger = logging.getLogger("FILE DOWNLOADER")
 
@@ -37,6 +38,8 @@ class EmailFileDownloader:
         email_list    = self.load_email_list_from_file()
         gmail_service = self.get_google_api_service()
         self.download_attachments_from_email(email_list, gmail_service)
+
+        self.write_last_email_download_time()
 
 
     def load_email_list_from_file(self):
@@ -69,8 +72,8 @@ class EmailFileDownloader:
         labs = list(email_list.keys())
         self.logger.info(f"Downloading files from the following labs: {', '.join(labs)}")
 
-        current_date = datetime.datetime.now()
-        past_date = current_date - datetime.timedelta(days=30)
+        current_date = self.get_last_email_download_time()
+        past_date = current_date - datetime.timedelta(days=1)
         past_date_str = past_date.strftime('%Y/%m/%d')
 
         self.logger.info(f"Considering only e-mails after {past_date.strftime('%Y-%m-%d')}")
@@ -143,6 +146,30 @@ class EmailFileDownloader:
             self.logger.info(f"Saved attachment {filename} as {new_filename}")
         
 
+
+    def get_last_email_download_time(self):
+        TIME_FORMAT = "%Y-%m-%d"
+
+        if not os.path.exists(self.last_download_time_file):
+            self.write_last_email_download_time()
+
+        last_email_download_time = None
+        with open(self.last_download_time_file, 'r') as f:
+            last_email_download_time = datetime.datetime.strptime(
+                f.read(), TIME_FORMAT
+            )
+
+        return last_email_download_time
+    
+
+    def write_last_email_download_time(self):
+        TIME_FORMAT = "%Y-%m-%d"
+
+        current_date = datetime.datetime.now()
+        with open(self.last_download_time_file, 'w') as f:
+            f.write( current_date.strftime(TIME_FORMAT) )
+
+
 if __name__ == "__main__":
     
     if not test_token_exists(TOKEN_PATH):
@@ -150,8 +177,6 @@ if __name__ == "__main__":
 
     if not test_if_token_is_still_active(TOKEN_PATH, SCOPES):
         exit()
-
-    # download_files_from_labs(lab_emails)
 
     email_file_downloader = EmailFileDownloader()
     email_file_downloader.run()
