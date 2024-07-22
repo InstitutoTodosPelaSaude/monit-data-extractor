@@ -1,6 +1,8 @@
 # ========================================= #
 # RODE ESSE SCRIPT PARA GERAR UM NOVO TOKEN #
 # ========================================= #
+#  RUN THIS SCRIPT TO GENERATE A NEW TOKEN  #
+# ========================================= #
 
 import os.path
 
