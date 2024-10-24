@@ -1,7 +1,7 @@
 version: '3'
 services:
-  extractor:
-    build: ./extractor 
+  gmail-extractor:
+    build: ./gmail-extractor 
     volumes:
-      - ./extractor/app:/app
-      - ./extractor/data:/data
+      - ./gmail-extractor/app:/app
+      - ./gmail-extractor/data:/data
