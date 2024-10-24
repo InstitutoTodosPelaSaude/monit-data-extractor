@@ -2,6 +2,8 @@ version: '3'
 services:
   manager:
     build: ./manager
+    env_file:
+      - .env
     volumes:
       - ./manager/app:/app
       - ./manager/data:/data
