@@ -4,6 +4,7 @@ services:
     build: ./manager
     volumes:
       - ./manager/app:/app
+      - ./manager/data:/data
     ports:
       - 8000:8000
 
