@@ -1,5 +1,12 @@
 version: '3'
 services:
+  manager:
+    build: ./manager
+    volumes:
+      - ./manager/app:/app
+    ports:
+      - 8000:8000
+
   gmail-extractor:
     build: ./gmail-extractor 
     volumes:
