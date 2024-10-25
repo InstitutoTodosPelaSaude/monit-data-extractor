@@ -7,7 +7,8 @@ python /app/healthcheck/check.py
 if [ $? -eq 0 ]; then
   echo "Health checks passed. Starting Application..."
 
-  python /app/start.py
+  python /app/create_database.py
+  python /app/models.py
 
   # Start API
   uvicorn main:app --reload --host 0.0.0.0 --port 8000
