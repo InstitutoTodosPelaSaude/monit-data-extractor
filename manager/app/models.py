@@ -90,11 +90,11 @@ class StatusUpdateModel(BaseModel):
     end:    Optional[datetime] = None
 
 class FileModel(BaseModel):
-    id: Optional[int]
+    id: Optional[int] = None
     session_id: str
     organization: str
     project: str
-    filename: str
+    filename: str = None
     upload_ts: Optional[datetime] = None
 
     class Config:

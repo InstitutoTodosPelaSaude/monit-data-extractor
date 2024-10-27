@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, UploadFile, File, HTTPException
 
 from datetime import datetime
 import random
@@ -6,7 +6,7 @@ import random
 from sqlalchemy.orm import Session
 
 from models import get_db
-from models import Log, File, Status
+from models import Log, File as FileDB, Status
 from models import LogModel, FileModel, StatusModel, StatusUpdateModel
 
 
@@ -71,3 +71,31 @@ async def update_status(status_update: StatusUpdateModel, db: Session = Depends(
     db.refresh(existing_status)
 
     return existing_status
+
+
+@app.post("/file", response_model=FileModel)
+async def upload_file(
+    session_id: str,
+    organization: str,
+    project: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+
+    existing_status = db.query(Status).filter(Status.session_id == session_id).first()
+    if not existing_status:
+        raise HTTPException(status_code=404, detail="Session ID not found.")
+    
+    new_file = FileDB(
+        session_id   = session_id,
+        organization = organization,
+        project      = project,
+        filename     = "temp", # file.filename,
+        upload_ts    = datetime.now()
+    )
+
+    db.add(new_file)
+    db.commit()
+    db.refresh(new_file)
+
+    return new_file

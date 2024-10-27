@@ -7,7 +7,7 @@ class TestAPILogsRoute(unittest.TestCase):
     def setUp(self) -> None:
         self.api_base_url = "http://localhost:8000"
         self.log_endpoint = f"{self.api_base_url}/log"
-        self.app_name = "TestApp"  # App Name
+        self.app_name = "TestAPILogsRoute"  # App Name
 
         # Create a valid session_id
         response = requests.get(self.log_endpoint, params={"app_name": self.app_name})
