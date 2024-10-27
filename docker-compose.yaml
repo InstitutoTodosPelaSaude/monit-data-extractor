@@ -10,6 +10,13 @@ services:
     ports:
       - 8000:8000
 
+  example-extractor:
+    build: ./example-extractor
+    env_file:
+      - .env
+    volumes:
+      - ./example-extractor/app:/app
+
   gmail-extractor:
     build: ./gmail-extractor 
     volumes:
