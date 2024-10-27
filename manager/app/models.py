@@ -83,6 +83,10 @@ class StatusModel(BaseModel):
     class Config:
         from_attributes = True
 
+class StatusUpdateModel(BaseModel):
+    session_id: str
+    status: str
+
 class FileModel(BaseModel):
     id: Optional[int]
     session_id: str

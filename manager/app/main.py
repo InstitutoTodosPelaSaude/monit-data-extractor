@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from models import get_db
 from models import Log, File, Status
-from models import LogModel, FileModel, StatusModel
+from models import LogModel, FileModel, StatusModel, StatusUpdateModel
 
 
 app = FastAPI()
@@ -30,7 +30,7 @@ async def root( app_name:str, db: Session = Depends(get_db) ):
 
 @app.post("/log", response_model=LogModel)
 async def post_log(log: LogModel, db: Session = Depends(get_db)):
-    # Verifica se o session_id existe no banco de dados
+
     existing_status = db.query(Status).filter(Status.session_id == log.session_id).first()
     if not existing_status:
         raise HTTPException(status_code=404, detail="Session ID not found.")
@@ -43,3 +43,18 @@ async def post_log(log: LogModel, db: Session = Depends(get_db)):
     db.refresh(new_log)
 
     return new_log
+
+
+@app.put("/status", response_model=StatusUpdateModel)
+async def update_status(status_update: StatusUpdateModel, db: Session = Depends(get_db)):
+
+    existing_status = db.query(Status).filter(Status.session_id == status_update.session_id).first()
+    if not existing_status:
+        raise HTTPException(status_code=404, detail="Session ID not found.")
+
+    # Atualiza o status
+    existing_status.status = status_update.status
+    db.commit()
+    db.refresh(existing_status)
+
+    return existing_status

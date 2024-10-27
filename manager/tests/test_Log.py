@@ -68,5 +68,31 @@ class TestAPIHosts(unittest.TestCase):
         self.assertEqual(response.status_code, HTTPStatus.UNPROCESSABLE_ENTITY)
         self.assertIn("detail", response.json())
 
+    # TESTS /status
+    def test_PUT_status_200_OK_update_existing_status(self):
+        new_status = {
+            "session_id": self.session_id,
+            "status": "COMPLETED"  # New Session STATUS
+        }
+
+        response = requests.put(f"{self.api_base_url}/status", json=new_status)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(response.json()["status"], "COMPLETED")
+
+    def test_PUT_status_404_not_found(self):
+        session_id = "nonexistent_session"  # Use um session_id que não existe
+        new_status = {
+            "session_id": session_id,
+            "status": "COMPLETED"
+        }
+
+        response = requests.put(f"{self.api_base_url}/status", json=new_status)
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+        self.assertIn("Session ID not found", response.json()["detail"])
+
+    def test_PUT_status_missing_parameters(self):
+        response = requests.put(f"{self.api_base_url}/status", json={})
+        self.assertEqual(response.status_code, HTTPStatus.UNPROCESSABLE_ENTITY)
+
 if __name__ == "__main__":
     unittest.main()
