@@ -63,7 +63,7 @@ def get_db():
 # Pydantic Models
 # ==================================
 class LogModel(BaseModel):
-    id: Optional[int]
+    id: Optional[int] = None
     session_id: str
     app_name: str
     type: Literal["INFO", "WARNING", "ERROR", "CRITICAL"]

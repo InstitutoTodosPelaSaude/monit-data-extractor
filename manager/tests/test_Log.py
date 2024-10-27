@@ -59,13 +59,13 @@ class TestAPIHosts(unittest.TestCase):
         self.assertIn("detail", response.json())
 
     # POST method with missing parameters returns BAD REQUEST
-    def test_POST_log_400_BadRequest__missing_parameters(self):
+    def test_POST_log_422_BadRequest__missing_parameters(self):
         payload = {
             "session_id": self.session_id,
             "app_name": self.app_name
         }
         response = requests.post(self.log_endpoint, json=payload)
-        self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
+        self.assertEqual(response.status_code, HTTPStatus.UNPROCESSABLE_ENTITY)
         self.assertIn("detail", response.json())
 
 if __name__ == "__main__":
