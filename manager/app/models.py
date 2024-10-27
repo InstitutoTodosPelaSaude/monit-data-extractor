@@ -1,6 +1,11 @@
 
+# ORM Imports
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.orm import sessionmaker, declarative_base
+
+# Pydantic for smarter API Typing
+from pydantic import BaseModel
+from typing import Optional, Literal
 from datetime import datetime
 
 from enum import Enum
@@ -11,7 +16,9 @@ Base = declarative_base()
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Modelo para a tabela Status
+# ==================================
+# ORM Models
+# ==================================
 class Status(Base):
     __tablename__ = "status"
 
@@ -50,6 +57,43 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+# ==================================
+# Pydantic Models
+# ==================================
+class LogModel(BaseModel):
+    id: Optional[int]
+    session_id: str
+    app_name: str
+    type: Literal["INFO", "WARNING", "ERROR", "CRITICAL"]
+    message: str
+    timestamp: Optional[datetime] = None 
+
+    class Config:
+        from_attributes = True
+
+class StatusModel(BaseModel):
+    session_id: str
+    app_name: str
+    start: Optional[datetime] = None
+    end: Optional[datetime] = None
+    status: str
+
+    class Config:
+        from_attributes = True
+
+class FileModel(BaseModel):
+    id: Optional[int]
+    session_id: str
+    organization: str
+    project: str
+    filename: str
+    upload_ts: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
 
 if __name__ == "__main__":
 

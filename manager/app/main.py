@@ -11,7 +11,7 @@ app = FastAPI()
 async def root():
     return {"message": "Hello World"}
 
-@app.get("/log")
+@app.get("/log", status_code=201)
 async def root( app_name:str, db: Session = Depends(get_db) ):
 
     session_id = f"{app_name}-{datetime.now().strftime('%Y%m%d%H%m%S')}-{random.randint(0, 1000000):07d}"
@@ -20,4 +20,4 @@ async def root( app_name:str, db: Session = Depends(get_db) ):
     db.commit()
     db.refresh(new_status)
 
-    return session_id
+    return {"session_id": session_id}
