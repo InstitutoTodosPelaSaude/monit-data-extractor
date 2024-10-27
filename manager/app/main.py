@@ -56,6 +56,11 @@ async def update_status(status_update: StatusUpdateModel, db: Session = Depends(
 
     # Update Status
     existing_status.status = status_update.status
+    if status_update.start:
+        existing_status.status = status_update.start
+    if status_update.end:
+        existing_status.end = status_update.end
+
     db.commit()
     db.refresh(existing_status)
 

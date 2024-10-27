@@ -1,6 +1,7 @@
 import unittest
 import requests
 from http import HTTPStatus
+from datetime import datetime
 
 class TestAPIHosts(unittest.TestCase):
 
@@ -73,6 +74,18 @@ class TestAPIHosts(unittest.TestCase):
         new_status = {
             "session_id": self.session_id,
             "status": "COMPLETED"  # New Session STATUS
+        }
+
+        response = requests.put(f"{self.api_base_url}/status", json=new_status)
+        print(response.json())
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(response.json()["status"], "COMPLETED")
+
+    def test_PUT_status_200_OK_update_existing_status_and_timestamp(self):
+        new_status = {
+            "session_id": self.session_id,
+            "status": "COMPLETED",  # New Session STATUS
+            "end": datetime.now().isoformat()
         }
 
         response = requests.put(f"{self.api_base_url}/status", json=new_status)

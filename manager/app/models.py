@@ -86,6 +86,8 @@ class StatusModel(BaseModel):
 class StatusUpdateModel(BaseModel):
     session_id: str
     status: str
+    start: Optional[datetime] = None
+    end:    Optional[datetime] = None
 
 class FileModel(BaseModel):
     id: Optional[int]
