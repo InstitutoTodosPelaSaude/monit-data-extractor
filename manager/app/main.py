@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, UploadFile, File, HTTPException
+from http import HTTPStatus
 
 from datetime import datetime
 import random
@@ -17,7 +18,7 @@ async def root():
     return {"message": "Hello World"}
 
 
-@app.get("/log", status_code=201)
+@app.get("/log", status_code=HTTPStatus.CREATED)
 async def get_log( app_name:str, db: Session = Depends(get_db) ):
 
     # Session ID is composed of APP-NAME + REQUEST TIMESTAMP + RANDOM NUMBER
@@ -35,7 +36,7 @@ async def post_log(log: LogModel, db: Session = Depends(get_db)):
 
     existing_status = db.query(Status).filter(Status.session_id == log.session_id).first()
     if not existing_status:
-        raise HTTPException(status_code=404, detail="Session ID not found.")
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Session ID not found.")
     
     if log.type == "CRITICAL":
         existing_status.end    = datetime.now()
@@ -58,7 +59,7 @@ async def update_status(status_update: StatusUpdateModel, db: Session = Depends(
 
     existing_status = db.query(Status).filter(Status.session_id == status_update.session_id).first()
     if not existing_status:
-        raise HTTPException(status_code=404, detail="Session ID not found.")
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Session ID not found.")
 
     # Update Status
     existing_status.status = status_update.status
@@ -81,16 +82,20 @@ async def upload_file(
     file: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
-
+    
     existing_status = db.query(Status).filter(Status.session_id == session_id).first()
     if not existing_status:
-        raise HTTPException(status_code=404, detail="Session ID not found.")
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Session ID not found.")
+    
+    forbidden_extensions = ['.exe']
+    if any( [file.filename.endswith(ext) for ext in forbidden_extensions] ):
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=f'Invalid file format for {file.filename}')
     
     new_file = FileDB(
         session_id   = session_id,
         organization = organization,
         project      = project,
-        filename     = "temp", # file.filename,
+        filename     = file.filename,
         upload_ts    = datetime.now()
     )
 

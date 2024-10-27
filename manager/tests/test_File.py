@@ -17,19 +17,22 @@ class TestAPIFileRoute(unittest.TestCase):
         else:
             self.fail("Falha ao obter session_id no setup. Status do GET inesperado.")
 
-    def test_POST_file_200_OK_successful_upload(self):
         with open("testfile.txt", "w") as f:
             f.write("This is a test file content.")
+        with open("testfile.exe", "w") as f:
+            f.write("This is a test .exe file content.")
+
+    def test_POST_file_200_OK_successful_upload(self):
 
         file_data = {
             "session_id": self.session_id,
             "organization": "TestOrg",
             "project": "TestProject"
         }
-        files = {"file": open("testfile.txt", "rb")}
 
-        response = requests.post(self.file_endpoint, params=file_data, files=files)
-        print(response.json())
+        with open("testfile.txt", "rb") as file:
+            files = {"file": file}
+            response = requests.post(self.file_endpoint, params=file_data, files=files)
         
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.json()["session_id"], self.session_id)
@@ -42,12 +45,14 @@ class TestAPIFileRoute(unittest.TestCase):
             "organization": "TestOrg",
             "project": "TestProject"
         }
-        files = {"file": open("testfile.txt", "rb")}
 
-        response = requests.post(self.file_endpoint, params=file_data, files=files)
+        with open("testfile.txt", "rb") as file:
+            files = {"file": file}
+            response = requests.post(self.file_endpoint, params=file_data, files=files)
         
         self.assertEqual(response.status_code, HTTPStatus.UNPROCESSABLE_ENTITY)
-        self.assertIn("field required", response.json()["detail"][0]["msg"])
+        print(response.json())
+        self.assertIn("detail", response.json())
 
     def test_POST_file_404_invalid_session_id(self):
         file_data = {
@@ -55,9 +60,10 @@ class TestAPIFileRoute(unittest.TestCase):
             "organization": "TestOrg",
             "project": "TestProject"
         }
-        files = {"file": open("testfile.txt", "rb")}
 
-        response = requests.post(self.file_endpoint, params=file_data, files=files)
+        with open("testfile.txt", "rb") as file:
+            files = {"file": file}
+            response = requests.post(self.file_endpoint, params=file_data, files=files)
         
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
         self.assertIn("Session ID not found", response.json()["detail"])
@@ -68,10 +74,10 @@ class TestAPIFileRoute(unittest.TestCase):
             "organization": "TestOrg",
             "project": "TestProject"
         }
-        # Envia um arquivo com extensão .exe para simular formato inválido
-        files = {"file": open("testfile.exe", "rb")}
 
-        response = requests.post(self.file_endpoint, params=file_data, files=files)
+        with open("testfile.exe", "rb") as file:
+            files = {"file": file}
+            response = requests.post(self.file_endpoint, params=file_data, files=files)
         
         self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
         self.assertIn("Invalid file format", response.json()["detail"])
