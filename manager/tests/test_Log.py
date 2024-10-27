@@ -29,7 +29,7 @@ class TestAPILogsRoute(unittest.TestCase):
         payload = {
             "session_id": self.session_id,  # Session 
             "app_name": self.app_name,
-            "type": "INFO",
+            "level": "INFO",
             "message": "Test message"
         }
         response = requests.post(self.log_endpoint, json=payload)
@@ -41,7 +41,7 @@ class TestAPILogsRoute(unittest.TestCase):
         payload = {
             "session_id": self.session_id,
             "app_name": self.app_name,
-            "type": "INVALID_TYPE",
+            "level": "INVALID_TYPE",
             "message": "Test message"
         }
         response = requests.post(self.log_endpoint, json=payload)
@@ -53,7 +53,7 @@ class TestAPILogsRoute(unittest.TestCase):
         payload = {
             "session_id": "nonexistent_session",
             "app_name": self.app_name,
-            "type": "INFO",
+            "level": "INFO",
             "message": "Test message"
         }
         response = requests.post(self.log_endpoint, json=payload)

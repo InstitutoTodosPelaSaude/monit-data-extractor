@@ -35,7 +35,7 @@ class Log(Base):
 
     session_id = Column(String, index=True)
     app_name   = Column(String)
-    type       = Column(String)
+    level      = Column(String)
     message    = Column(String)
     timestamp  = Column(DateTime, default=datetime.now())
 
@@ -44,7 +44,7 @@ class File(Base):
     __tablename__ = "file"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
 
-    session_id   = Column(String,)
+    session_id   = Column(String, )
     organization = Column(String, )
     project      = Column(String, )
     filename     = Column(String, )
@@ -63,22 +63,22 @@ def get_db():
 # Pydantic Models
 # ==================================
 class LogModel(BaseModel):
-    id: Optional[int] = None
-    session_id: str
-    app_name: str
-    type: Literal["INFO", "WARNING", "ERROR", "CRITICAL"]
-    message: str
-    timestamp: Optional[datetime] = None # The database already handles timestamp default value
+    id         : Optional[int] = None
+    session_id : str
+    app_name   : str
+    level      : Literal["INFO", "WARNING", "ERROR", "CRITICAL"]
+    message    : str
+    timestamp  : Optional[datetime] = None # The database already handles timestamp default value
 
     class Config:
         from_attributes = True
 
 class StatusModel(BaseModel):
-    session_id: str
-    app_name: str
-    start: Optional[datetime] = None
-    end: Optional[datetime] = None
-    status: str
+    session_id : str
+    app_name   : str
+    start      : Optional[datetime] = None
+    end        : Optional[datetime] = None
+    status     : str
 
     class Config:
         from_attributes = True

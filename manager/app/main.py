@@ -39,7 +39,7 @@ async def post_log(log: LogModel, db: Session = Depends(get_db)):
     if not existing_status:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Session ID not found.")
     
-    if log.type == "CRITICAL":
+    if log.level == "CRITICAL":
         existing_status.end    = datetime.now()
         existing_status.status = "FINISHED WITH ERRORS"
         db.commit()
