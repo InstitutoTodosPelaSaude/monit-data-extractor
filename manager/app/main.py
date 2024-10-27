@@ -16,9 +16,11 @@ app = FastAPI()
 async def root():
     return {"message": "Hello World"}
 
-@app.get("/log", status_code=201)
-async def root( app_name:str, db: Session = Depends(get_db) ):
 
+@app.get("/log", status_code=201)
+async def get_log( app_name:str, db: Session = Depends(get_db) ):
+
+    # Session ID is composed of APP-NAME + REQUEST TIMESTAMP + RANDOM NUMBER
     session_id = f"{app_name}-{datetime.now().strftime('%Y%m%d%H%m%S')}-{random.randint(0, 1000000):07d}"
     new_status = Status(session_id=session_id, app_name=app_name, status="STARTED")
     db.add(new_status)
@@ -35,7 +37,7 @@ async def post_log(log: LogModel, db: Session = Depends(get_db)):
     if not existing_status:
         raise HTTPException(status_code=404, detail="Session ID not found.")
 
-    # Remove 'id' if it is present
+    # Remove 'id' if it is present to avoid errors in the database
     log_data = log.dict(exclude={"id"})
     new_log = Log(**log_data)
     db.add(new_log)
@@ -52,7 +54,7 @@ async def update_status(status_update: StatusUpdateModel, db: Session = Depends(
     if not existing_status:
         raise HTTPException(status_code=404, detail="Session ID not found.")
 
-    # Atualiza o status
+    # Update Status
     existing_status.status = status_update.status
     db.commit()
     db.refresh(existing_status)
