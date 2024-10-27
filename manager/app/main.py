@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from models import get_db
 from models import Log, File as FileDB, Status
-from models import LogModel, FileModel, StatusModel, StatusUpdateModel
+from models import LogModel, FileModel, StatusUpdateModel
 
 from minio_connection import get_minio_client, upload_file_to_folder
 
@@ -77,11 +77,11 @@ async def update_status(status_update: StatusUpdateModel, db: Session = Depends(
 
 @app.post("/file", response_model=FileModel)
 async def upload_file(
-    session_id: str,
-    organization: str,
-    project: str,
-    file: UploadFile = File(...),
-    db: Session = Depends(get_db),
+    session_id   : str,
+    organization : str,
+    project      : str,
+    file         : UploadFile = File(...),
+    db           : Session = Depends(get_db),
     minio_client = Depends(get_minio_client)
 ):
     
@@ -101,6 +101,11 @@ async def upload_file(
         filename     = filename,
         upload_ts    = datetime.now()
     )
+
+
+    # ===================================
+    # FILE UPLOAD
+    # ===================================
 
     file_content = file.file.read()
     file_length = len(file_content)

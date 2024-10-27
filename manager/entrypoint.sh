@@ -10,6 +10,9 @@ if [ $? -eq 0 ]; then
   python /app/create_database.py
   python /app/models.py
 
+  echo "Notifier application started - CRON in background"
+  cron
+
   # Start API
   uvicorn main:app --reload --host 0.0.0.0 --port 8000
 else
