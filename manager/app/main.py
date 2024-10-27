@@ -36,7 +36,13 @@ async def post_log(log: LogModel, db: Session = Depends(get_db)):
     existing_status = db.query(Status).filter(Status.session_id == log.session_id).first()
     if not existing_status:
         raise HTTPException(status_code=404, detail="Session ID not found.")
-
+    
+    if log.type == "CRITICAL":
+        existing_status.end    = datetime.now()
+        existing_status.status = "FINISHED WITH ERRORS"
+        db.commit()
+        db.refresh(existing_status)
+    
     # Remove 'id' if it is present to avoid errors in the database
     log_data = log.dict(exclude={"id"})
     new_log = Log(**log_data)
@@ -57,9 +63,9 @@ async def update_status(status_update: StatusUpdateModel, db: Session = Depends(
     # Update Status
     existing_status.status = status_update.status
     if status_update.start:
-        existing_status.status = status_update.start
+        existing_status.start = status_update.start
     if status_update.end:
-        existing_status.end = status_update.end
+        existing_status.end   = status_update.end
 
     db.commit()
     db.refresh(existing_status)
