@@ -68,7 +68,7 @@ class LogModel(BaseModel):
     app_name: str
     type: Literal["INFO", "WARNING", "ERROR", "CRITICAL"]
     message: str
-    timestamp: Optional[datetime] = None 
+    timestamp: Optional[datetime] = None # The database already handles timestamp default value
 
     class Config:
         from_attributes = True

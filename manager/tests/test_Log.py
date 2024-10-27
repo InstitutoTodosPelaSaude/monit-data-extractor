@@ -1,9 +1,8 @@
 import unittest
 import requests
 from http import HTTPStatus
-from datetime import datetime
 
-class TestAPIHosts(unittest.TestCase):
+class TestAPILogsRoute(unittest.TestCase):
 
     def setUp(self) -> None:
         self.api_base_url = "http://localhost:8000"
@@ -17,6 +16,8 @@ class TestAPIHosts(unittest.TestCase):
         else:
             self.fail("Falha ao obter session_id no setup. Status do GET inesperado.")
 
+    # Test /LOG
+    # ===============================
     # GET method without parameters returns 201 OK and JSON formatted as {"session_id": session_id}
     def test_GET_log_201_OK__fetch_log(self):
         response = requests.get(self.log_endpoint, params={"app_name": self.app_name})
@@ -68,44 +69,6 @@ class TestAPIHosts(unittest.TestCase):
         response = requests.post(self.log_endpoint, json=payload)
         self.assertEqual(response.status_code, HTTPStatus.UNPROCESSABLE_ENTITY)
         self.assertIn("detail", response.json())
-
-    # TESTS /status
-    def test_PUT_status_200_OK_update_existing_status(self):
-        new_status = {
-            "session_id": self.session_id,
-            "status": "COMPLETED"  # New Session STATUS
-        }
-
-        response = requests.put(f"{self.api_base_url}/status", json=new_status)
-        print(response.json())
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertEqual(response.json()["status"], "COMPLETED")
-
-    def test_PUT_status_200_OK_update_existing_status_and_timestamp(self):
-        new_status = {
-            "session_id": self.session_id,
-            "status": "COMPLETED",  # New Session STATUS
-            "end": datetime.now().isoformat()
-        }
-
-        response = requests.put(f"{self.api_base_url}/status", json=new_status)
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertEqual(response.json()["status"], "COMPLETED")
-
-    def test_PUT_status_404_not_found(self):
-        session_id = "nonexistent_session"  # Use um session_id que não existe
-        new_status = {
-            "session_id": session_id,
-            "status": "COMPLETED"
-        }
-
-        response = requests.put(f"{self.api_base_url}/status", json=new_status)
-        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
-        self.assertIn("Session ID not found", response.json()["detail"])
-
-    def test_PUT_status_missing_parameters(self):
-        response = requests.put(f"{self.api_base_url}/status", json={})
-        self.assertEqual(response.status_code, HTTPStatus.UNPROCESSABLE_ENTITY)
 
 if __name__ == "__main__":
     unittest.main()
