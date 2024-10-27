@@ -10,6 +10,7 @@ from models import get_db
 from models import Log, File as FileDB, Status
 from models import LogModel, FileModel, StatusModel, StatusUpdateModel
 
+from minio_connection import get_minio_client, upload_file_to_folder
 
 app = FastAPI()
 
@@ -80,24 +81,42 @@ async def upload_file(
     organization: str,
     project: str,
     file: UploadFile = File(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    minio_client = Depends(get_minio_client)
 ):
     
     existing_status = db.query(Status).filter(Status.session_id == session_id).first()
     if not existing_status:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Session ID not found.")
-    
+
+    filename = file.filename
     forbidden_extensions = ['.exe']
-    if any( [file.filename.endswith(ext) for ext in forbidden_extensions] ):
-        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=f'Invalid file format for {file.filename}')
+    if any( [filename.endswith(ext) for ext in forbidden_extensions] ):
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=f'Invalid file format for {filename}')
     
     new_file = FileDB(
         session_id   = session_id,
         organization = organization,
         project      = project,
-        filename     = file.filename,
+        filename     = filename,
         upload_ts    = datetime.now()
     )
+
+    file_content = file.file.read()
+    file_length = len(file_content)
+    file.file.seek(0)
+
+    file_uploaded_successfully, file_upload_message = upload_file_to_folder(
+        minio_client, 
+        'data', 
+        f'{project}/data/{organization}/{filename}', 
+        file.file,
+        file_length 
+    )
+
+    
+    if not file_uploaded_successfully:
+        raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=file_upload_message)
 
     db.add(new_file)
     db.commit()

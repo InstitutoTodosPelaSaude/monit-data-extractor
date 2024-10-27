@@ -51,7 +51,6 @@ class TestAPIFileRoute(unittest.TestCase):
             response = requests.post(self.file_endpoint, params=file_data, files=files)
         
         self.assertEqual(response.status_code, HTTPStatus.UNPROCESSABLE_ENTITY)
-        print(response.json())
         self.assertIn("detail", response.json())
 
     def test_POST_file_404_invalid_session_id(self):
