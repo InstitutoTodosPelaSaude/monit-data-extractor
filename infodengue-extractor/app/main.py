@@ -3,7 +3,15 @@ import pandas as pd
 from datetime import datetime, timedelta
 from epiweeks import Week, Year
 
+import os
+import io
+
 from itertools import product
+
+# Save and handle logs
+import logging
+import requests
+from utils import APILogHandler, JSONFormatter
 
 GEOCODE_TO_UF = {
     1200401: "AC",
@@ -56,7 +64,7 @@ UF_TO_REGION = {
     "PR": "Sul", "RS": "Sul", "SC": "Sul"
 }
 
-BASE_URL = "https://info.dengue.mat.br/api/alertcity?geocode=2408102&disease=dengue&format=csv&ew_start=1&ew_end=2&ey_start=2024&ey_end=2024"
+BASE_URL = "https://info.dengue.mat.br/api/alertcity"
 
 def get_data_infodengue(geocode, disease, ew_start, ew_end, ey_start, ey_end):
     
@@ -94,17 +102,102 @@ def get_current_epiweek():
 if __name__ == "__main__":
 
     current_year = int(datetime.now().year)
-    current_epiweek = get_current_epiweek()-1
-    diseases = ["dengue"]
+    current_epiweek = get_current_epiweek()
+    disease = "dengue"
 
     all_epiweeks = list(range(1, 53+1))
     all_years = list(range(2022, current_year+1))
 
-    for geocode, uf in GEOCODE_TO_UF.items():
-        infodengue_df = get_data_infodengue(geocode, "dengue", current_epiweek, current_epiweek, 2024, 2024)
-        infodengue_df['state_code'] = uf
-        infodengue_df['state'] = infodengue_df['state_code'].map(UF_TO_NAME)
-        infodengue_df['region'] = infodengue_df['state_code'].map(UF_TO_REGION)
-        infodengue_df['data_fimSE'] = infodengue_df['data_iniSE'].apply(get_week_end_date)
+    API_ENPOINT = os.getenv("MANAGER_ENDPOINT")
+    APP_NAME    = 'infodengue'
+
+    # ===================================
+    # Logger configuration
+    # ===================================
+    
+    logging.basicConfig(
+        level=logging.DEBUG,  # Set the minimum logging level
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',  # Log message format
+    )
+    logger = logging.getLogger(APP_NAME.upper())  # Create a logger
+    response = requests.get(f"{API_ENPOINT}/log", params={'app_name': APP_NAME})
+
+    # Application
+    # ==================================
+
+    logger.info("Starting Info Dengue extractor")
+
+    logger.info("Retrieving session ID.")
+    session_id = response.json()['session_id']
+    logger.info(f"Session id: '{session_id}'")
+
+    # Send logs to API
+    api_handler = APILogHandler(API_ENPOINT, session_id=session_id, app_name=APP_NAME)
+    json_formatter = JSONFormatter()
+    api_handler.setFormatter(json_formatter)
+
+    all_epiweeks = [current_epiweek-1, current_epiweek]
+    all_years    = [current_year]
+    all_ufs_dataframes = []
+
+    for epiweek, year in product(all_epiweeks, all_years):
+        for geocode, uf in GEOCODE_TO_UF.items():
+            logger.info(f"Requesting SE{epiweek} - {year} {uf}")
+            infodengue_df = get_data_infodengue(geocode, disease, epiweek, epiweek, year, year)
+            
+            if infodengue_df.shape[0] < 1:
+                logger.warning(f"No data found for SE{epiweek} - {year} {uf}")
+                continue
         
-        print(infodengue_df)
+            infodengue_df['state_code'] = uf
+            infodengue_df['state'] = infodengue_df['state_code'].map(UF_TO_NAME)
+            infodengue_df['region'] = infodengue_df['state_code'].map(UF_TO_REGION)
+            infodengue_df['data_fimSE'] = infodengue_df['data_iniSE'].apply(get_week_end_date)
+
+            all_ufs_dataframes.append(infodengue_df)
+            
+        if len(all_ufs_dataframes) == 0:
+            logger.warning(f"No data found for SE{epiweek} - {year}")
+            all_ufs_dataframes = []
+            continue
+        
+        all_ufs_infodengue_df = pd.concat(all_ufs_dataframes)
+        all_ufs_dataframes = []
+        filename = f"INFODENGUE_{year}_SE_{epiweek}.csv"
+        
+        logger.info(f"Finished extracting data for SE{epiweek} - {year}")
+        logger.info(f"Saving file {filename}...")
+
+        buffer = io.BytesIO()
+        all_ufs_infodengue_df.to_csv(buffer, index=False)
+        buffer.seek(0)  # Move to the beginning of the buffer
+
+        response = requests.post(
+            f"{API_ENPOINT}/file", 
+            params={
+                "session_id": session_id,
+                "organization": "InfoDengue",
+                "project": "arbo"
+            }, 
+            files={
+                "file": (filename, buffer, 'text/csv')
+            }
+        )
+
+        logger.info(f"Finished uploading file {filename}!")
+
+
+    logger.info("Finished extracting all data")
+
+    response = requests.put(
+        f"{API_ENPOINT}/status", 
+        json = {
+        "session_id": session_id,
+        "status": "COMPLETED",  # New Session STATUS
+        "end": datetime.now().isoformat()
+        }
+    )
+
+    logger.info("Finished pipeline.")
+
+        
