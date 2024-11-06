@@ -1,6 +1,9 @@
 
 import pandas as pd
 from datetime import datetime, timedelta
+from epiweeks import Week, Year
+
+from itertools import product
 
 GEOCODE_TO_UF = {
     1200401: "AC",
@@ -53,7 +56,6 @@ UF_TO_REGION = {
     "PR": "Sul", "RS": "Sul", "SC": "Sul"
 }
 
-
 BASE_URL = "https://info.dengue.mat.br/api/alertcity?geocode=2408102&disease=dengue&format=csv&ew_start=1&ew_end=2&ey_start=2024&ey_end=2024"
 
 def get_data_infodengue(geocode, disease, ew_start, ew_end, ey_start, ey_end):
@@ -72,8 +74,37 @@ def get_data_infodengue(geocode, disease, ew_start, ew_end, ey_start, ey_end):
         # Em caso de erro, exibe uma mensagem de erro
         print(f"Erro ao obter ou processar os dados: {e}")
         return None
-    
-if __name__ == "__main__":
-    infodengue_df = get_data_infodengue(2408102, "dengue", 1, 2, 2024, 2024)
 
-    print(infodengue_df)
+def get_week_end_date(date_str):
+    date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+    end_date_obj = date_obj + timedelta(days=6)
+    return end_date_obj.strftime('%Y-%m-%d')
+
+def get_current_epiweek():
+    current_date = datetime.now().date()
+    current_year = int(datetime.now().year)
+    all_epiweeks = list(range(1, 53+1))
+
+    for epiweek_number in all_epiweeks:
+        epiweek = Week(current_year, epiweek_number)
+        if current_date >= epiweek.startdate() and current_date <= epiweek.enddate():
+            return epiweek_number
+
+
+if __name__ == "__main__":
+
+    current_year = int(datetime.now().year)
+    current_epiweek = get_current_epiweek()
+    diseases = ["dengue"]
+
+    all_epiweeks = list(range(1, 53+1))
+    all_years = list(range(2022, current_year+1))
+
+    for geocode, uf in GEOCODE_TO_UF.items():
+        infodengue_df = get_data_infodengue(geocode, "dengue", 1, 2, 2024, 2024)
+        infodengue_df['state_code'] = uf
+        infodengue_df['state'] = infodengue_df['state_code'].map(UF_TO_NAME)
+        infodengue_df['region'] = infodengue_df['state_code'].map(UF_TO_REGION)
+        infodengue_df['data_fimSE'] = infodengue_df['data_iniSE'].apply(get_week_end_date)
+        
+        print(infodengue_df)
