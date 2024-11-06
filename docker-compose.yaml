@@ -22,3 +22,10 @@ services:
     volumes:
       - ./gmail-extractor/app:/app
       - ./gmail-extractor/data:/data
+
+  infodengue-extractor:
+    build: ./infodengue-extractor
+    env_file:
+      - .env
+    volumes:
+      - ./infodengue-extractor/app:/app

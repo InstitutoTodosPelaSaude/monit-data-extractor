@@ -94,14 +94,14 @@ def get_current_epiweek():
 if __name__ == "__main__":
 
     current_year = int(datetime.now().year)
-    current_epiweek = get_current_epiweek()
+    current_epiweek = get_current_epiweek()-1
     diseases = ["dengue"]
 
     all_epiweeks = list(range(1, 53+1))
     all_years = list(range(2022, current_year+1))
 
     for geocode, uf in GEOCODE_TO_UF.items():
-        infodengue_df = get_data_infodengue(geocode, "dengue", 1, 2, 2024, 2024)
+        infodengue_df = get_data_infodengue(geocode, "dengue", current_epiweek, current_epiweek, 2024, 2024)
         infodengue_df['state_code'] = uf
         infodengue_df['state'] = infodengue_df['state_code'].map(UF_TO_NAME)
         infodengue_df['region'] = infodengue_df['state_code'].map(UF_TO_REGION)
