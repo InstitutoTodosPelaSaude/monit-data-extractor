@@ -140,13 +140,17 @@ if __name__ == "__main__":
     all_years    = [current_year]
     all_ufs_dataframes = []
 
-    for epiweek, year in product(all_epiweeks, all_years):
+    for year, epiweek in product(all_years, all_epiweeks):
         for geocode, uf in GEOCODE_TO_UF.items():
-            logger.info(f"Requesting SE{epiweek} - {year} {uf}")
+            logger.info(f"Requesting SE{epiweek:02d} - {year} {uf}")
             infodengue_df = get_data_infodengue(geocode, disease, epiweek, epiweek, year, year)
             
+            if infodengue_df is None:
+                logger.warning(f"API returned 'None' SE{epiweek:02d} - {year} {uf}")
+                continue
+
             if infodengue_df.shape[0] < 1:
-                logger.warning(f"No data found for SE{epiweek} - {year} {uf}")
+                logger.warning(f"No data found for SE{epiweek:02d} - {year} {uf}")
                 continue
         
             infodengue_df['state_code'] = uf
@@ -157,15 +161,15 @@ if __name__ == "__main__":
             all_ufs_dataframes.append(infodengue_df)
             
         if len(all_ufs_dataframes) == 0:
-            logger.warning(f"No data found for SE{epiweek} - {year}")
+            logger.warning(f"No data found for SE{epiweek:02d} - {year}")
             all_ufs_dataframes = []
             continue
         
         all_ufs_infodengue_df = pd.concat(all_ufs_dataframes)
         all_ufs_dataframes = []
-        filename = f"INFODENGUE_{year}_SE_{epiweek}.csv"
+        filename = f"INFODENGUE_{year}_SE_{epiweek:02d}.csv"
         
-        logger.info(f"Finished extracting data for SE{epiweek} - {year}")
+        logger.info(f"Finished extracting data for SE{epiweek:02d} - {year}")
         logger.info(f"Saving file {filename}...")
 
         buffer = io.BytesIO()
