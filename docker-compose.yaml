@@ -32,3 +32,13 @@ services:
       - .env
     volumes:
       - ./infodengue-extractor/app:/app
+
+  sivep-extractor:
+    build: 
+      context: ./sivep-extractor
+      args:
+          MANAGER_ENDPOINT: ${MANAGER_ENDPOINT}
+    env_file:
+      - .env
+    volumes:
+      - ./sivep-extractor/app:/app
