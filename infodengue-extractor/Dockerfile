@@ -18,7 +18,6 @@ RUN touch /app/log/cron.log
 # 0 */6 * * *
 RUN touch /etc/cron.d/infodengue-cron-job
 RUN echo "0 */6 * * * MANAGER_ENDPOINT=$MANAGER_ENDPOINT /usr/local/bin/python /app/main.py >> /app/log/cron.log 2>&1" >> /etc/cron.d/infodengue-cron-job
-# RUN echo "* * * * * echo $cca >> /app/log/cron.log 2>&1" > /etc/cron.d/infodengue-cron-job
 RUN chmod 0644 /etc/cron.d/infodengue-cron-job
 RUN crontab /etc/cron.d/infodengue-cron-job
 
@@ -26,4 +25,3 @@ RUN crontab /etc/cron.d/infodengue-cron-job
 WORKDIR /app
 
 CMD ["/usr/local/bin/entrypoint.sh"]
-# CMD ["cron", "-f"]
