@@ -2,10 +2,10 @@ import datetime
 import sqlite3
 
 DB_PATH = '/data/monitor.db'
-MINIMUM_TIME_FOR_NOTIFICATION_IN_MINUTES = 5
+MINIMUM_TIME_FOR_NOTIFICATION_IN_DAYS = 5
 
 # Convert the minimum notification time into a timedelta object
-time_limit = datetime.timedelta(minutes=MINIMUM_TIME_FOR_NOTIFICATION_IN_MINUTES)
+time_limit = datetime.timedelta(days=MINIMUM_TIME_FOR_NOTIFICATION_IN_DAYS)
 
 # Define the query to get the latest file upload for each organization and project
 query_latest_file_for_each_organization = """
@@ -42,7 +42,7 @@ def check_notifications():
 
             # Check if the upload is older than the time limit
             if current_time - upload_time > time_limit:
-                print(f"Organization {organization} didn't send a file for project {project} in the last {MINIMUM_TIME_FOR_NOTIFICATION_IN_MINUTES}. Last file: '{filename}' in {upload_time}")
+                print(f"Organization {organization} didn't send a file for project {project} in the last {MINIMUM_TIME_FOR_NOTIFICATION_IN_DAYS} days. Last file: '{filename}' in {upload_time}")
             else:
                 print(f"Organization {organization} is on schedule for project {project}. Last file sent in {upload_time}")
 
