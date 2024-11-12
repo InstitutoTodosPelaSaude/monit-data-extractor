@@ -110,6 +110,10 @@ if __name__ == "__main__":
 
     API_ENPOINT = os.getenv("MANAGER_ENDPOINT")
     APP_NAME    = 'infodengue'
+    
+    if API_ENPOINT is None:
+        print(f"ERROR! API_ENPOINT is None")
+        exit(1)
 
     # ===================================
     # Logger configuration

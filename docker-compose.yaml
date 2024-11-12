@@ -24,7 +24,10 @@ services:
       - ./gmail-extractor/data:/data
 
   infodengue-extractor:
-    build: ./infodengue-extractor
+    build: 
+      context: ./infodengue-extractor
+      args:
+          MANAGER_ENDPOINT: ${MANAGER_ENDPOINT}
     env_file:
       - .env
     volumes:
