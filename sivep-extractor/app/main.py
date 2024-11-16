@@ -9,6 +9,8 @@ import logging
 import requests
 from utils import APILogHandler, JSONFormatter
 
+from datetime import datetime
+
 def fetch_html(url):
     """
     Makes a request to fetch the HTML content of a page.
@@ -122,5 +124,24 @@ if __name__ == "__main__":
 
         logger.info(f"Successfully saved file {filename}")
         was_able_to_download_at_least_one_file = True
+
+    if not was_able_to_download_at_least_one_file:
+        logger.critical(f"Unable to retrieve any files from DATASUS")
+        exit(1)
+
+    logger.info("Finished extracting all data")
+
+    response = requests.put(
+        f"{API_ENPOINT}/status", 
+        json = {
+            "session_id": session_id,
+            "status": "COMPLETED",  # New Session STATUS
+            "end": datetime.now().isoformat()
+        }
+    )
+
+    logger.info("Finished pipeline.")
+
+    
 
     
