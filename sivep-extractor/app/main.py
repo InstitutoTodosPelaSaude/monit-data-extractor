@@ -1,27 +1,37 @@
 import requests
+from bs4 import BeautifulSoup
 
-def salvar_html(url, nome_arquivo='pagina.html'):
+def fetch_html(url):
+    """
+    Makes a request to fetch the HTML content of a page.
+    """
     try:
-        # Fazer a requisição para obter o conteúdo HTML
-        resposta = requests.get(url)
-        resposta.raise_for_status()  # Verifica se houve algum erro na requisição
-
-        # Salvar o conteúdo HTML em um arquivo
-        with open(nome_arquivo, 'w', encoding='utf-8') as arquivo:
-            arquivo.write(resposta.text)
-
-        print(f'O HTML foi salvo em "{nome_arquivo}".')
-
+        response = requests.get(url)
+        response.raise_for_status()  # Checks for request errors
+        return response.text
     except requests.exceptions.RequestException as e:
-        print(f'Ocorreu um erro ao obter o HTML: {e}')
+        print(f"Error fetching the page's HTML: {e}")
+        return None
 
-# Exemplo de uso
-# class="resource-item"
-#   href <a> data-format="csv"
+def extract_csv_public_links(html):
+    """
+    Extracts all links (href attributes) from the provided HTML content.
+    :param html: String containing the HTML content.
+    :return: List of strings with the values of href attributes.
+    """
+    soup = BeautifulSoup(html, 'html.parser')
+    hrefs = [a.get('href') for a in soup.find_all('a', href=True, class_="dropdown-item resource-url-analytics")]
+    hrefs = [ href for href in hrefs if href.endswith('.csv') ]
+    return hrefs
 
-url = 'https://opendatasus.saude.gov.br/dataset/srag-2021-a-2024'  # Substitua pela URL desejada
-salvar_html(url, 'pagina.html')
-print("oi oi oi oi")
-print("oi oi oi oi")
-print("oi oi oi oi")
-print("oi oi oi oi")
+# Example usage
+url = 'https://opendatasus.saude.gov.br/dataset/srag-2021-a-2024'  # Replace with the desired URL
+
+# Fetch the HTML
+html_content = fetch_html(url)
+if html_content:
+    # Extract the links
+    links = extract_csv_public_links(html_content)
+    print("Links found:")
+    for link in links:
+        print(link)

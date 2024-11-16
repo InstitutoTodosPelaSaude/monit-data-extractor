@@ -17,7 +17,7 @@ RUN touch /app/log/cron.log
 
 # 0 */6 * * *
 RUN touch /etc/cron.d/sivep-cron-job
-RUN echo "0 * * * * MANAGER_ENDPOINT=$MANAGER_ENDPOINT /usr/local/bin/python /app/main.py >> /app/log/cron.log 2>&1" >> /etc/cron.d/sivep-cron-job
+RUN echo "* * * * * MANAGER_ENDPOINT=$MANAGER_ENDPOINT /usr/local/bin/python /app/main.py >> /app/log/cron.log 2>&1; cat /app/log/cron.log > /proc/1/fd/1" >> /etc/cron.d/sivep-cron-job
 RUN chmod 0644 /etc/cron.d/sivep-cron-job
 RUN crontab /etc/cron.d/sivep-cron-job
 
