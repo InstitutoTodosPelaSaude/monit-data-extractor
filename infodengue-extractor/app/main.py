@@ -140,7 +140,8 @@ if __name__ == "__main__":
     json_formatter = JSONFormatter()
     api_handler.setFormatter(json_formatter)
 
-    all_epiweeks = [current_epiweek-1, current_epiweek]
+    NUMBER_OF_PREVIOUS_EPIWEEKS_TO_COLLECT = 8
+    all_epiweeks = [current_epiweek-i for i in range(0, NUMBER_OF_PREVIOUS_EPIWEEKS_TO_COLLECT+1)]
     all_years    = [current_year]
     all_ufs_dataframes = []
 
