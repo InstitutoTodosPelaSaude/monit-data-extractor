@@ -7,7 +7,7 @@ import io
 # Save and handle logs
 import logging
 import requests
-from utils import APILogHandler, JSONFormatter
+from log import ManagerInterface
 
 from datetime import datetime
 
@@ -62,26 +62,12 @@ if __name__ == "__main__":
     # ===================================
     # Logger configuration
     # ===================================
-    
-    logging.basicConfig(
-        level=logging.DEBUG,  # Set the minimum logging level
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',  # Log message format
-    )
-    logger = logging.getLogger(APP_NAME.upper())  # Create a logger
-    response = requests.get(f"{API_ENPOINT}/log", params={'app_name': APP_NAME})
+    manager_interface = ManagerInterface(APP_NAME, API_ENPOINT )
+    logger = manager_interface.logger
 
     # Application
     # ==================================
     logger.info("Starting SIVEP extractor")
-
-    logger.info("Retrieving session ID.")
-    session_id = response.json()['session_id']
-    logger.info(f"Session id: '{session_id}'")
-
-    api_handler = APILogHandler(API_ENPOINT, session_id=session_id, app_name=APP_NAME)
-    json_formatter = JSONFormatter()
-    api_handler.setFormatter(json_formatter)
-    logger.info(f"Saving Logs in the database...")
 
     logger.info(f"Requesting HTML content from DATASUS page {datasus_url}")
     html_content = fetch_html(url=datasus_url)
@@ -109,17 +95,12 @@ if __name__ == "__main__":
         if not file_content:
             logger.error(f"Unable to retrieve file - {link}")
             continue
-
-        response = requests.post(
-            f"{API_ENPOINT}/file", 
-            params={
-                "session_id": session_id,
-                "organization": "SIVEP",
-                "project": "respat"
-            }, 
-            files={
-                "file": (filename, file_content, 'text/csv')
-            }
+        
+        manager_interface.upload_file(
+            organization="SIVEP",
+            project="respat",
+            file_content=file_content,
+            file_name=filename
         )
 
         logger.info(f"Successfully saved file {filename}")
@@ -131,14 +112,7 @@ if __name__ == "__main__":
 
     logger.info("Finished extracting all data")
 
-    response = requests.put(
-        f"{API_ENPOINT}/status", 
-        json = {
-            "session_id": session_id,
-            "status": "COMPLETED",  # New Session STATUS
-            "end": datetime.now().isoformat()
-        }
-    )
+    manager_interface.close_session()
 
     logger.info("Finished pipeline.")
 
