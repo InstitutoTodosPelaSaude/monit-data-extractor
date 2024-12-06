@@ -9,9 +9,7 @@ import io
 from itertools import product
 
 # Save and handle logs
-import logging
-import requests
-from utils import APILogHandler, JSONFormatter
+from log import ManagerInterface
 
 GEOCODE_TO_UF = {
     1200401: "AC",
@@ -101,45 +99,30 @@ def get_current_epiweek():
 
 if __name__ == "__main__":
 
+    API_ENPOINT = os.getenv("MANAGER_ENDPOINT")
+    APP_NAME    = 'infodengue'
+
+    if API_ENPOINT is None:
+        print(f"ERROR! API_ENPOINT is None")
+        exit(1)
+
     current_year = int(datetime.now().year)
     current_epiweek = get_current_epiweek()
     disease = "dengue"
 
     all_epiweeks = list(range(1, 53+1))
     all_years = list(range(2022, current_year+1))
-
-    API_ENPOINT = os.getenv("MANAGER_ENDPOINT")
-    APP_NAME    = 'infodengue'
     
-    if API_ENPOINT is None:
-        print(f"ERROR! API_ENPOINT is None")
-        exit(1)
 
     # ===================================
     # Logger configuration
     # ===================================
+    manager_interface = ManagerInterface(APP_NAME, API_ENPOINT )
+    logger = manager_interface.logger
     
-    logging.basicConfig(
-        level=logging.DEBUG,  # Set the minimum logging level
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',  # Log message format
-    )
-    logger = logging.getLogger(APP_NAME.upper())  # Create a logger
-    response = requests.get(f"{API_ENPOINT}/log", params={'app_name': APP_NAME})
 
     # Application
     # ==================================
-
-    logger.info("Starting Info Dengue extractor")
-
-    logger.info("Retrieving session ID.")
-    session_id = response.json()['session_id']
-    logger.info(f"Session id: '{session_id}'")
-
-    # Send logs to API
-    api_handler = APILogHandler(API_ENPOINT, session_id=session_id, app_name=APP_NAME)
-    json_formatter = JSONFormatter()
-    api_handler.setFormatter(json_formatter)
-
     NUMBER_OF_PREVIOUS_EPIWEEKS_TO_COLLECT = 8
     all_epiweeks = [current_epiweek-i for i in range(0, NUMBER_OF_PREVIOUS_EPIWEEKS_TO_COLLECT+1)]
     all_years    = [current_year]
@@ -181,31 +164,17 @@ if __name__ == "__main__":
         all_ufs_infodengue_df.to_csv(buffer, index=False)
         buffer.seek(0)  # Move to the beginning of the buffer
 
-        response = requests.post(
-            f"{API_ENPOINT}/file", 
-            params={
-                "session_id": session_id,
-                "organization": "InfoDengue",
-                "project": "arbo"
-            }, 
-            files={
-                "file": (filename, buffer, 'text/csv')
-            }
+        manager_interface.upload_file(
+            organization="InfoDengue",
+            project="arbo",
+            file_content=buffer,
+            file_name=filename
         )
 
         logger.info(f"Finished uploading file {filename}!")
 
-
     logger.info("Finished extracting all data")
-
-    response = requests.put(
-        f"{API_ENPOINT}/status", 
-        json = {
-        "session_id": session_id,
-        "status": "COMPLETED",  # New Session STATUS
-        "end": datetime.now().isoformat()
-        }
-    )
+    manager_interface.close_session()
 
     logger.info("Finished pipeline.")
 
