@@ -26,6 +26,61 @@ def load_emails_list():
     except Exception as e:
         return None
 
+def get_attachments_from_email(mail, email_id):
+    """
+    Extract the attachments from a specific e-mail and return as a BytesIO list.
+    
+    Args:
+        mail (imaplib.IMAP4_SSL): Connection with IMAP Server.
+        email_id (bytes): E-mail id
+
+    Returns:
+        List[Tuple[str, io.BytesIO]]: Tuple list containing the filename and binary content.
+    """
+    try:
+        # Obtém o e-mail pelo ID
+        result, data = mail.fetch(email_id, '(RFC822)')
+        if result != 'OK':
+            raise Exception(f"Failed to fetch email with ID {email_id}")
+
+        # Decodifica o e-mail
+        raw_email = data[0][1]
+        email_message = email.message_from_bytes(raw_email)
+
+        attachments = []
+        for part in email_message.walk():
+            # Verifica se o conteúdo é um anexo
+            if part.get_content_disposition() == 'attachment':
+                filename = part.get_filename()
+                if filename:  # Apenas processa se houver nome de arquivo
+                    file_data = part.get_payload(decode=True)  # Decodifica o conteúdo do anexo
+                    if file_data:
+                        attachments.append((filename, io.BytesIO(file_data)))
+
+        return attachments
+
+    except Exception as e:
+        logger.error(f"Error while fetching attachments from email ID {email_id}: {e}")
+        return []
+
+
+def determine_project_from_file_name(lab, filename):
+
+    if lab in ('FLEURY', 'EINSTEIN', 'HILAB', 'HPARDINI'):
+        return ['arbo', 'respat']
+    
+    if lab == 'SABIN':
+        if 'arbo' in filename.lower():
+            return ['arbo']
+        return ['respat']
+
+    if lab == 'HLAGYN':
+        if 'arbo' in filename.lower():
+            return ['arbo']
+        return ['respat']
+
+    return []
+
 if __name__ == "__main__":
     API_ENPOINT = os.getenv("MANAGER_ENDPOINT")
     APP_NAME    = 'GMail'
@@ -36,6 +91,7 @@ if __name__ == "__main__":
     EMAIL_QUERY_PAST_DAYS = 30
 
     IMAP_SERVER = 'imap.gmail.com'
+    current_date = datetime.now().strftime("%Y-%m-%d")
 
     if API_ENPOINT is None:
         print(f"ERROR! API_ENPOINT is None")
@@ -79,5 +135,36 @@ if __name__ == "__main__":
 
         logger.info(f"Found {len(email_ids)} e-mails.")
 
+        for email_id in email_ids:
+            # Get e-mail attachments
+            attachments = get_attachments_from_email(mail, email_id)
+            if not attachments:
+                logger.info(f"No attachments found for email ID {email_id}.")
+                continue
+            
+            for filename, file_bytes in attachments:
+                logger.info(f"Found file {filename}. ")
+                projects = determine_project_from_file_name(lab_name, filename)
+
+                if not projects:
+                    logger.error(f"Unable to determine which project (arbo/respat) the file '{filename}' from {lab_name} is part of. The file will not be uploaded.")
+                    continue
+
+                for project in projects:
+
+                    logger.info(f"Uploading file {filename} (project={project})...")
+                    new_filename = f"{lab_name}_{current_date}__{filename}"
+
+                    manager_interface.upload_file(
+                        organization=lab_name.lower(),
+                        project=project,
+                        file_content=file_bytes,
+                        file_name=new_filename
+                    )
+                    logger.info(f"Finished uploading file {filename}!")
+    
+    logger.info("Finished extracting all data")
+    manager_interface.close_session()
 
     mail.close()
+    logger.info("Finished pipeline.")
