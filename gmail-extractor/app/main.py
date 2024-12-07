@@ -24,6 +24,13 @@ def last_download_time():
         return (datetime.now() - timedelta(days=30))
     
 def load_emails_list():
+    """Loads the e-mail list from /app/emails.json. 
+    This list is a set of key-pairs, containing the lab and the list of e-mails it can use to send data.
+    Ex. {'my-beautiful-lab': ['my-beautiful-lab@email.com'], 'lab-2-lab': ['user1@lab.com', 'user2@lab.com'] }
+
+    Returns:
+        dict: A dictionary representing the JSON or None.
+    """
     try:
         with open('/app/emails.json', 'r') as f:
             return json.load(f)
@@ -69,6 +76,15 @@ def get_attachments_from_email(mail, email_id):
 
 
 def determine_project_from_file_name(lab, filename):
+    """Define whether the file is part of project arbo, respat, or both from its name and origin lab.
+
+    Args:
+        lab (str): File's lab
+        filename (str): The name of the file
+
+    Returns:
+        List[str]: A list of strings containg all the projects the file is part of
+    """
 
     if lab in ('FLEURY', 'EINSTEIN', 'HILAB', 'HPARDINI'):
         return ['arbo', 'respat']
