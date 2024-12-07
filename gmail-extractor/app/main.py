@@ -12,6 +12,10 @@ import io
 # Save and handle logs
 from log import ManagerInterface
 
+def update_last_download_time():
+    with open('/app/last_download_time.txt', 'w') as f:
+        f.write(datetime.now().strftime('%Y-%m-%d'))
+    
 def last_download_time():
     try:
         with open('/app/last_download_time.txt', 'r') as f:
@@ -163,7 +167,8 @@ if __name__ == "__main__":
                     )
                     logger.info(f"Finished uploading file {filename}!")
     
-    logger.info("Finished extracting all data")
+    update_last_download_time()
+    logger.info(f"Finished extracting all data. Last execution date set to {current_date}")
     manager_interface.close_session()
 
     mail.close()
