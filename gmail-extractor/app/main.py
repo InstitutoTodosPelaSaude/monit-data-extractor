@@ -1,57 +1,83 @@
-# from emplify_report_exporter import EmplifyReportExporter
 import email
 import imaplib
-import re
-import requests
+
 from dotenv import load_dotenv
 import os
 from datetime import datetime, timedelta
 
-#### Load environment variables
-load_dotenv()
-EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
-EMAIL_APP_PASSWORD = os.getenv("EMAIL_APP_PASSWORD")
-EMAIL_QUERY_SENDER = "joaopedrodasilvalima@gmail.com"
-EMAIL_QUERY_PAST_DAYS = 180
+import json
+import os
+import io
 
-IMAP_SERVER = 'imap.gmail.com'
+# Save and handle logs
+from log import ManagerInterface
 
-#### Connect to the IMAP server
-mail = imaplib.IMAP4_SSL(IMAP_SERVER)
-mail.login(EMAIL_ADDRESS, EMAIL_APP_PASSWORD)
-mail.select('inbox')  # Você pode escolher outra pasta
+def last_download_time():
+    try:
+        with open('/app/last_download_time.txt', 'r') as f:
+            return datetime.strptime(f.read(), '%Y-%m-%d')
+    except Exception as e:
+        return (datetime.now() - timedelta(days=30))
+    
+def load_emails_list():
+    try:
+        with open('/app/emails.json', 'r') as f:
+            return json.load(f)
+    except Exception as e:
+        return None
 
-#### Query for unread messages from a Emplify, newer than 1 day
-date_threshold = (datetime.now() - timedelta(days=EMAIL_QUERY_PAST_DAYS)).strftime('%d-%b-%Y')
-date_threshold = f'"{date_threshold}"'
-query_string = f'SINCE {date_threshold} FROM "{EMAIL_QUERY_SENDER}"'
-result, data = mail.search(None, query_string)
-email_ids = data[0].split()
-print(f"Found {len(email_ids)} unread messages from ")
+if __name__ == "__main__":
+    API_ENPOINT = os.getenv("MANAGER_ENDPOINT")
+    APP_NAME    = 'GMail'
 
-if not email_ids or len(email_ids) == 0:
-    print("No messages found")
-    exit()
+    EMAIL_ADDRESS         = os.getenv("EMAIL_ADDRESS")
+    EMAIL_APP_PASSWORD    = os.getenv("EMAIL_APP_PASSWORD")
+    EMAIL_QUERY_SENDER    = "joaopedrodasilvalima@gmail.com"
+    EMAIL_QUERY_PAST_DAYS = 30
 
-#### Export the excel reports
-for email_id in email_ids:
-    # Fetch the email
-    result, data = mail.fetch(email_id, '(RFC822)')
-    raw_email = data[0][1]
-    email_message = email.message_from_bytes(raw_email)
-    print(f"Processing message from {email_message['date']} with subject: {email_message['subject']}")
+    IMAP_SERVER = 'imap.gmail.com'
 
-    # Get the body of the email and extract the URL
-    if email_message.is_multipart():
-        for part in email_message.walk():
-            if part.get_content_type() == "text/plain":
-                body = part.get_payload(decode=True).decode(part.get_content_charset())
-    else:
-        body = email_message.get_payload(decode=True).decode(email_message.get_content_charset())
+    if API_ENPOINT is None:
+        print(f"ERROR! API_ENPOINT is None")
+        exit(1)
+
+    # ===================================
+    # Logger configuration
+    # ===================================
+    manager_interface = ManagerInterface(APP_NAME, API_ENPOINT)
+    logger = manager_interface.logger
+
+    # Connect to the IMAP server
+    logger.info(f"Connecting to the IMAP server using '{EMAIL_ADDRESS}'")
+    
+    mail = imaplib.IMAP4_SSL(IMAP_SERVER)
+    mail.login(EMAIL_ADDRESS, EMAIL_APP_PASSWORD)
+    mail.select('inbox')  # Você pode escolher outra pasta
+
+    query_start_date = last_download_time().strftime('%d-%b-%Y')
+    logger.info(f"Searching emails from {query_start_date} up to NOW.")
+
+    logger.info(f"Loading list of e-mail senders from 'emails.json'")
+    lab_sender_email_list = load_emails_list()
+    if not lab_sender_email_list:
+        logger.critical(f"Unable to read file 'emails.json'")
+        exit(1)
+    
+    logger.info(f"Searching for e-mails sent by the following labs: {','.join(lab_sender_email_list.keys())}")
+    for lab_name, lab_sender_list in lab_sender_email_list.items():
+        
+        query_sender_part = " ".join([f'FROM "{email_sender}"' for email_sender in lab_sender_list])
+        query_string = f'SINCE {query_start_date} ({query_sender_part})'
+        logger.info(f"Searching e-mails for lab {lab_name}. Query string: {query_string}")
+        
+        result, data = mail.search(None, query_string)
+        email_ids = data[0].split()
+
+        if not email_ids:
+            logger.info("No e-mails found.")
+            continue
+
+        logger.info(f"Found {len(email_ids)} e-mails.")
 
 
-
-mail.close()
-
-print("All reports exported successfully")
-
+    mail.close()
