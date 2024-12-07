@@ -19,6 +19,8 @@ services:
 
   gmail-extractor:
     build: ./gmail-extractor 
+    env_file:
+      - .env
     volumes:
       - ./gmail-extractor/app:/app
       - ./gmail-extractor/data:/data
