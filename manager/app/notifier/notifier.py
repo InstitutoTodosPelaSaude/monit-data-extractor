@@ -1,4 +1,5 @@
-import datetime
+from datetime import datetime
+from zoneinfo import ZoneInfo
 import sqlite3
 
 import json
@@ -6,11 +7,7 @@ import requests
 from http import HTTPStatus
 
 DB_PATH = '/data/monitor.db'
-MINIMUM_TIME_FOR_NOTIFICATION_IN_DAYS = 5
 MANAGER_API_URL = "http://manager:8000"
-
-# Convert the minimum notification time into a timedelta object
-time_limit = datetime.timedelta(days=MINIMUM_TIME_FOR_NOTIFICATION_IN_DAYS)
 
 labs_monitored = ['fleury', 'einstein',
                   'sabin' , 'hlagyn',
@@ -70,13 +67,14 @@ def create_summary():
             summary[project][organization]["files"].append(filename.split('__')[-1])
 
         # Generate the Slack report
+        current_ts = datetime.now(tz= ZoneInfo("America/Sao_Paulo")).strftime('%d %b %Y - %H:%M')
         slack_summary_report = {
             'blocks':[
                 {
-                    "type": "section",
+                    "type": "header",
                     "text": {
-                        "type": "mrkdwn",
-                        "text": "Arquivos enviados pelos laboratórios - Resumo Diário"
+                        "type": "plain_text",
+                        "text": f"Arquivos enviados pelos laboratórios\nResumo Diário - {current_ts}"
                     }
                 },
                 {
