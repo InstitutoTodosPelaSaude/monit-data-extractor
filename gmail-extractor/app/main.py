@@ -12,6 +12,33 @@ import io
 # Save and handle logs
 from log import ManagerInterface
 
+import base64
+
+def decode_base64_string(input_string):
+    """
+    Checks if a string is Base64-encoded and decodes it.
+    Returns the original string if it is not valid Base64.
+    
+    Args:
+        input_string (str): The input string to check and decode.
+        
+    Returns:
+        str: Decoded string or the original input.
+    """
+    try:
+        # Check if the string follows the MIME encoded-word format
+        if input_string.startswith("=?") and "?b?" in input_string and input_string.endswith("?="):
+            # Extract the Base64-encoded part from the MIME format
+            base64_text = input_string.split("?")[3]
+            return base64.b64decode(base64_text).decode("utf-8")
+        else:
+            # Attempt to decode as generic Base64
+            decoded = base64.b64decode(input_string).decode("utf-8")
+            return decoded
+    except (base64.binascii.Error, UnicodeDecodeError):
+        # Return the original string if decoding fails
+        return input_string
+
 def update_last_download_time():
     with open('/app/last_download_time.txt', 'w') as f:
         f.write(datetime.now().strftime('%Y-%m-%d'))
@@ -163,6 +190,7 @@ if __name__ == "__main__":
                 continue
             
             for filename, file_bytes in attachments:
+                filename = decode_base64_string(filename)
                 logger.info(f"Found file {filename}. ")
                 projects = determine_project_from_file_name(lab_name, filename)
 
