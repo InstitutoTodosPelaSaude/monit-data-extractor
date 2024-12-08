@@ -9,8 +9,15 @@ from sqlalchemy.orm import Session
 from models import get_db
 from models import Log, File as FileDB, Status
 from models import LogModel, FileModel, StatusUpdateModel
+from pydantic import ValidationError
 
 from minio_connection import get_minio_client, upload_file_to_folder
+
+import os
+import json
+from slack import get_slack_client
+from slack_sdk.errors import SlackApiError
+from models import SlackMessageModel
 
 app = FastAPI()
 
@@ -128,3 +135,47 @@ async def upload_file(
     db.refresh(new_file)
 
     return new_file
+
+
+# ====================
+# NOTIFICATIONS
+# ====================
+
+@app.post("/notify/slack")
+async def upload_file(
+    message      : str,
+    slack_client = Depends(get_slack_client)
+):
+    
+    slack_channel = os.getenv("SLACK_CHANNEL")
+    if not slack_channel:
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Environment variable SLACK_CHANNEL is not configured."
+        )
+
+    try:
+        parsed_message = json.loads(message)
+        validated_message = SlackMessageModel.parse_obj(parsed_message)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="Message must be a valid JSON.")
+    except ValidationError as e:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=f"Invalid Slack message structure: {e.errors()}"
+        )
+    
+    # Try sending message to Slack
+    try:
+        response = slack_client.chat_postMessage(
+            channel=slack_channel,
+            blocks=validated_message.blocks
+        )
+        return {"status": "success", "data": response.data}
+    except SlackApiError as e:
+        print("ERRORRR -------------------------")
+        print(e)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Slack API error: {e.response['error']}"
+        )
