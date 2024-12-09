@@ -12,7 +12,7 @@ RUN mkdir -p /app/notifier/log
 RUN touch /app/notifier/log/cron.log
 
 # 0 6-20 * * *
-RUN echo "* * * * *  /usr/local/bin/python /app/notifier/notifier.py >> /app/notifier/log/cron.log 2>&1" > /etc/cron.d/notifier-cron-job
+RUN echo "0 10,14,19 * * *  /usr/local/bin/python /app/notifier/notifier.py >> /app/notifier/log/cron.log 2>&1" > /etc/cron.d/notifier-cron-job
 RUN chmod 0644 /etc/cron.d/notifier-cron-job
 RUN crontab /etc/cron.d/notifier-cron-job
 
