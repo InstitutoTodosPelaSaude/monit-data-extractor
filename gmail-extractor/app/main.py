@@ -210,6 +210,7 @@ if __name__ == "__main__":
                         file_name=new_filename
                     )
                     logger.info(f"Finished uploading file {filename}!")
+                    file_bytes.seek(0)
     
     update_last_download_time()
     logger.info(f"Finished extracting all data. Last execution date set to {current_date}")
