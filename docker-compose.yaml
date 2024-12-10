@@ -18,7 +18,10 @@ services:
       - ./example-extractor/app:/app
 
   gmail-extractor:
-    build: ./gmail-extractor 
+    build: 
+      context: ./gmail-extractor
+      args:
+          MANAGER_ENDPOINT: ${MANAGER_ENDPOINT}
     env_file:
       - .env
     volumes:
