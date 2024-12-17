@@ -8,7 +8,7 @@ services:
       - ./manager/app:/app
       - ./manager/data:/data
     ports:
-      - 8000:8000
+      - 8214:8000
 
   example-extractor:
     build: ./example-extractor

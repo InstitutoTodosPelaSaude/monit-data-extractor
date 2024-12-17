@@ -19,7 +19,7 @@ RUN touch /app/log/cron.log
 
 # 0 */6 * * *
 RUN touch /etc/cron.d/gmail-cron-job
-RUN echo "0 3-23 * * * MANAGER_ENDPOINT=$MANAGER_ENDPOINT EMAIL_ADDRESS=$EMAIL_ADDRESS EMAIL_APP_PASSWORD=$EMAIL_APP_PASSWORD /usr/local/bin/python /app/main.py >> /app/log/cron.log 2>&1" >> /etc/cron.d/gmail-cron-job
+RUN echo "0 3-23 * * * MANAGER_ENDPOINT=$MANAGER_ENDPOINT EMAIL_ADDRESS=$EMAIL_ADDRESS EMAIL_APP_PASSWORD=\"$EMAIL_APP_PASSWORD\" /usr/local/bin/python /app/main.py >> /app/log/cron.log 2>&1" >> /etc/cron.d/gmail-cron-job
 RUN chmod 0644 /etc/cron.d/gmail-cron-job
 RUN crontab /etc/cron.d/gmail-cron-job
 
