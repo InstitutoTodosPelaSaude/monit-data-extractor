@@ -21,7 +21,9 @@ services:
     build: 
       context: ./gmail-extractor
       args:
-          MANAGER_ENDPOINT: ${MANAGER_ENDPOINT}
+          MANAGER_ENDPOINT:   ${MANAGER_ENDPOINT}
+          EMAIL_ADDRESS:      ${EMAIL_ADDRESS}
+          EMAIL_APP_PASSWORD: ${EMAIL_APP_PASSWORD}
     env_file:
       - .env
     volumes:
