@@ -57,14 +57,14 @@ def create_summary():
         
         # Process results
         summary = {
-            project: {lab: {"status": "🔴", "files": []} for lab in labs_monitored} 
+            project: {lab: {"status": "🔴", "files": set()} for lab in labs_monitored} 
             for project in projects
         }
         
         # Fill the summary based on query results
         for project, organization, filename, upload_ts in results:
             summary[project][organization]["status"] = "🟢"
-            summary[project][organization]["files"].append(filename.split('__')[-1])
+            summary[project][organization]["files"].add(filename.split('__')[-1])
 
         # Generate the Slack report
         current_ts = datetime.now(tz= ZoneInfo("America/Sao_Paulo")).strftime('%d %b %Y - %H:%M')
@@ -83,12 +83,12 @@ def create_summary():
             ]
         }
 
-        for project, organizations in summary.items():
+        for project, organizations_info in summary.items():
             slack_summary_report['blocks'].append(
                 {'type': 'header', 'text':{'type': 'plain_text', 'text': project.capitalize()}}
             )
             
-            for organization, info in organizations.items():
+            for organization, info in organizations_info.items():
                 files = '\n'.join(info['files'])
                 slack_summary_report['blocks'].append(
                     {
