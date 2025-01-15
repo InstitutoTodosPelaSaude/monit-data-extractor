@@ -12,7 +12,7 @@ MANAGER_API_URL = "http://manager:8000"
 labs_monitored = ['fleury', 'einstein',
                   'sabin' , 'hlagyn',
                   'hilab' , 'hpardini',
-                  'dbmol', ]
+                  'dbmol',  'target']
 
 projects = ['arbo', 'respat']
 
