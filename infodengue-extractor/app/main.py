@@ -123,9 +123,9 @@ if __name__ == "__main__":
 
     # Application
     # ==================================
-    NUMBER_OF_PREVIOUS_EPIWEEKS_TO_COLLECT = 55
+    NUMBER_OF_PREVIOUS_EPIWEEKS_TO_COLLECT = 8
     all_epiweeks = [current_epiweek-i for i in range(0, NUMBER_OF_PREVIOUS_EPIWEEKS_TO_COLLECT+1)]
-    all_years    = [2022, 2023, 2024]
+    all_years    = [current_year]
     all_ufs_dataframes = []
     for disease in diseases:
         logger.info(f"Running for {disease}")
