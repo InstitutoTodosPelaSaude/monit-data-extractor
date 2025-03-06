@@ -139,6 +139,25 @@ def determine_project_from_file_name(lab, filename):
 
     return []
 
+def fix_problematic_filenames(lab, filename):
+    """
+    Update the filename when necessary. 
+    Function used to fix some name issues with the original filename.
+
+    Args:
+        lab (str): File's lab
+        filename (str): The name of the file
+
+    Returns:
+        str: Fixed filename
+    """
+
+    # Hilab files without extension
+    if lab == 'HILAB' and not filename.endswith('.csv'):
+        return f'{filename}.csv'
+
+    return filename
+
 def get_files_downloaded_today():
     """
     Get list of files downloaded today by the Gmail extractor.
@@ -255,6 +274,7 @@ if __name__ == "__main__":
                 filename = decode_base64_string(filename)
                 logger.info(f"Found file {filename}. ")
                 projects = determine_project_from_file_name(lab_name, filename)
+                filename = fix_problematic_filenames(filename)
 
                 if filename in files_downloaded_today:
                     logger.info(f"File {filename} was already downloaded today. Skipping.")
