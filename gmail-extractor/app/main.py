@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 import json
 import os
 import io
+import re
 
 # Save and handle logs
 from log import ManagerInterface
@@ -31,8 +32,12 @@ def decode_base64_string(input_string):
         # Check if the string follows the MIME encoded-word format
         if input_string.startswith("=?") and "?b?" in input_string and input_string.endswith("?="):
             # Extract the Base64-encoded part from the MIME format
-            base64_text = input_string.split("?")[3]
-            return base64.b64decode(base64_text).decode("utf-8")
+
+            # Extract all texts 
+            base64_texts = re.findall(r"\?[B|b]\?(.*?)\?=", input_string)
+            decoded = ''.join([base64.b64decode(text).decode("utf-8") for text in base64_texts])
+
+            return decoded
         else:
             # Attempt to decode as generic Base64
             decoded = base64.b64decode(input_string).decode("utf-8")
