@@ -119,7 +119,7 @@ def determine_project_from_file_name(lab, filename):
         List[str]: A list of strings containg all the projects the file is part of
     """
 
-    if lab in ('FLEURY', 'EINSTEIN', 'HILAB', 'HPARDINI'):
+    if lab in ('FLEURY', 'EINSTEIN', 'HILAB', 'HPARDINI', 'TARGET'):
         return ['arbo', 'respat']
     
     if lab == 'SABIN':
@@ -188,7 +188,6 @@ if __name__ == "__main__":
 
     EMAIL_ADDRESS         = os.getenv("EMAIL_ADDRESS")
     EMAIL_APP_PASSWORD    = os.getenv("EMAIL_APP_PASSWORD")
-    EMAIL_QUERY_SENDER    = "joaopedrodasilvalima@gmail.com"
     EMAIL_QUERY_PAST_DAYS = 30
 
     IMAP_SERVER = 'imap.gmail.com'
