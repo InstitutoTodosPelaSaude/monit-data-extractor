@@ -30,7 +30,7 @@ def decode_base64_string(input_string):
     """
     try:
         # Check if the string follows the MIME encoded-word format
-        if input_string.startswith("=?") and "?b?" in input_string and input_string.endswith("?="):
+        if input_string.startswith("=?") and "?b?" in input_string.lower() and input_string.endswith("?="):
             # Extract the Base64-encoded part from the MIME format
 
             # Extract all texts 
