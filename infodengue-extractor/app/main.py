@@ -108,7 +108,7 @@ if __name__ == "__main__":
 
     current_year = int(datetime.now().year)
     current_epiweek = get_current_epiweek()
-    disease = "dengue"
+    diseases = ["dengue", "chikungunya", "zika"]
 
     all_epiweeks = list(range(1, 53+1))
     all_years = list(range(2022, current_year+1))
@@ -127,51 +127,53 @@ if __name__ == "__main__":
     all_epiweeks = [current_epiweek-i for i in range(0, NUMBER_OF_PREVIOUS_EPIWEEKS_TO_COLLECT+1)]
     all_years    = [current_year]
     all_ufs_dataframes = []
+    for disease in diseases:
+        logger.info(f"Running for {disease}")
+        for year, epiweek in product(all_years, all_epiweeks):
+            for geocode, uf in GEOCODE_TO_UF.items():
+                logger.info(f"Requesting {disease} SE{epiweek:02d} - {year} {uf}")
+                infodengue_df = get_data_infodengue(geocode, disease, epiweek, epiweek, year, year)
+                
+                if infodengue_df is None:
+                    logger.warning(f"API returned 'None' {disease} SE{epiweek:02d} - {year} {uf}")
+                    continue
 
-    for year, epiweek in product(all_years, all_epiweeks):
-        for geocode, uf in GEOCODE_TO_UF.items():
-            logger.info(f"Requesting SE{epiweek:02d} - {year} {uf}")
-            infodengue_df = get_data_infodengue(geocode, disease, epiweek, epiweek, year, year)
+                if infodengue_df.shape[0] < 1:
+                    logger.warning(f"No data found for {disease} SE{epiweek:02d} - {year} {uf}")
+                    continue
             
-            if infodengue_df is None:
-                logger.warning(f"API returned 'None' SE{epiweek:02d} - {year} {uf}")
-                continue
+                infodengue_df['disease'] = disease
+                infodengue_df['state_code'] = uf
+                infodengue_df['state'] = infodengue_df['state_code'].map(UF_TO_NAME)
+                infodengue_df['region'] = infodengue_df['state_code'].map(UF_TO_REGION)
+                infodengue_df['data_fimSE'] = infodengue_df['data_iniSE'].apply(get_week_end_date)
 
-            if infodengue_df.shape[0] < 1:
-                logger.warning(f"No data found for SE{epiweek:02d} - {year} {uf}")
+                all_ufs_dataframes.append(infodengue_df)
+                
+            if len(all_ufs_dataframes) == 0:
+                logger.warning(f"No data found for {disease} SE{epiweek:02d} - {year}")
+                all_ufs_dataframes = []
                 continue
-        
-            infodengue_df['state_code'] = uf
-            infodengue_df['state'] = infodengue_df['state_code'].map(UF_TO_NAME)
-            infodengue_df['region'] = infodengue_df['state_code'].map(UF_TO_REGION)
-            infodengue_df['data_fimSE'] = infodengue_df['data_iniSE'].apply(get_week_end_date)
-
-            all_ufs_dataframes.append(infodengue_df)
             
-        if len(all_ufs_dataframes) == 0:
-            logger.warning(f"No data found for SE{epiweek:02d} - {year}")
+            all_ufs_infodengue_df = pd.concat(all_ufs_dataframes)
             all_ufs_dataframes = []
-            continue
-        
-        all_ufs_infodengue_df = pd.concat(all_ufs_dataframes)
-        all_ufs_dataframes = []
-        filename = f"INFODENGUE_{year}_SE_{epiweek:02d}.csv"
-        
-        logger.info(f"Finished extracting data for SE{epiweek:02d} - {year}")
-        logger.info(f"Saving file {filename}...")
+            filename = f"INFODENGUE_{year}_SE_{epiweek:02d}_{disease}.csv"
+            
+            logger.info(f"Finished extracting data for {disease} SE{epiweek:02d} - {year}")
+            logger.info(f"Saving file {filename}...")
 
-        buffer = io.BytesIO()
-        all_ufs_infodengue_df.to_csv(buffer, index=False)
-        buffer.seek(0)  # Move to the beginning of the buffer
+            buffer = io.BytesIO()
+            all_ufs_infodengue_df.to_csv(buffer, index=False)
+            buffer.seek(0)  # Move to the beginning of the buffer
 
-        manager_interface.upload_file(
-            organization="InfoDengue",
-            project="arbo",
-            file_content=buffer,
-            file_name=filename
-        )
+            manager_interface.upload_file(
+                organization="InfoDengue",
+                project="arbo",
+                file_content=buffer,
+                file_name=filename
+            )
 
-        logger.info(f"Finished uploading file {filename}!")
+            logger.info(f"Finished uploading file {filename}!")
 
     logger.info("Finished extracting all data")
     manager_interface.close_session()
