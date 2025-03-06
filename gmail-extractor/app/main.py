@@ -274,7 +274,7 @@ if __name__ == "__main__":
                 filename = decode_base64_string(filename)
                 logger.info(f"Found file {filename}. ")
                 projects = determine_project_from_file_name(lab_name, filename)
-                filename = fix_problematic_filenames(filename)
+                filename = fix_problematic_filenames(lab_name, filename)
 
                 if filename in files_downloaded_today:
                     logger.info(f"File {filename} was already downloaded today. Skipping.")
