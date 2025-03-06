@@ -12,6 +12,7 @@ import re
 
 # Save and handle logs
 from log import ManagerInterface
+from email.utils import parsedate_to_datetime
 
 import base64
 
@@ -92,6 +93,10 @@ def get_attachments_from_email(mail, email_id):
         raw_email = data[0][1]
         email_message = email.message_from_bytes(raw_email)
 
+        # Extract and format the email date
+        raw_date = email_message["Date"]
+        email_date = parsedate_to_datetime(raw_date).strftime('%Y-%m-%d_%H-%M') if raw_date else None
+
         attachments = []
         for part in email_message.walk():
             # Verifica se o conteúdo é um anexo
@@ -102,11 +107,11 @@ def get_attachments_from_email(mail, email_id):
                     if file_data:
                         attachments.append((filename, io.BytesIO(file_data)))
 
-        return attachments
+        return email_date, attachments
 
     except Exception as e:
         logger.error(f"Error while fetching attachments from email ID {email_id}: {e}")
-        return []
+        return None, []
 
 def determine_project_from_file_name(lab, filename):
     """Define whether the file is part of project arbo, respat, or both from its name and origin lab.
@@ -241,7 +246,7 @@ if __name__ == "__main__":
 
         for email_id in email_ids:
             # Get e-mail attachments
-            attachments = get_attachments_from_email(mail, email_id)
+            email_date, attachments = get_attachments_from_email(mail, email_id)
             if not attachments:
                 logger.info(f"No attachments found for email ID {email_id}.")
                 continue
@@ -262,7 +267,7 @@ if __name__ == "__main__":
                 for project in projects:
 
                     logger.info(f"Uploading file {filename} (project={project})...")
-                    new_filename = f"{lab_name}_{current_date}__{filename}"
+                    new_filename = f"{lab_name}_{email_date}__{filename}"
 
                     manager_interface.upload_file(
                         organization=lab_name.lower(),

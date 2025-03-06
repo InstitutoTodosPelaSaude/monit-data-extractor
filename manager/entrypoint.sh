@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "Running Health checks.."
+
 # Run health checks
 python /app/healthcheck/check.py
 
