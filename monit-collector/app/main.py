@@ -16,7 +16,13 @@ async def root():
 def post_sabin_data(
     sabin_data: SabinDataList,
 ):
+    """
+    Save Sabin data to the database and format it to JSON.
+
+    Args:
+        sabin_data (SabinDataList): The data to be saved.
+    """
     
     save_sabin_data(sabin_data)
-    
+
     return {"data": sabin_data}
