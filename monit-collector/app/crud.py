@@ -1,9 +1,31 @@
 import json
 import os
 from io import BytesIO
+from datetime import datetime
 
 from log import ManagerInterface
 
+def save_sabin_data_flow(sabin_data):
+    """
+    Save the Sabin data to the database.
+
+    Args:
+        sabin_data (SabinDataList): The data to be saved.
+    """
+
+    # Transform SabinDataList to a list of dictionaries
+    sabin_data_list = format_sabin_data_json(sabin_data)
+
+    # Save one JSON file per date
+    current_date = datetime.now().strftime("%Y-%m-%d")
+    file_path = f"/data/sabin/sabin_{current_date}.json"
+
+    # Save the Sabin data to a JSON file
+    with open(file_path, "w") as file:
+        json.dump(sabin_data_list, file, indent=4)
+
+    # Save the Sabin data into the API
+    send_sabin_files_to_server_api()
 
 def get_manager_interface():
     """
@@ -35,55 +57,13 @@ def format_sabin_data_json(sabin_data):
 
     # DataAtendimento, DataNascimento, DataAssinatura format dd/mm/yyyy
     for data in data_list:
-        data['DataAtendimento'] = data['DataAtendimento'].strftime('%d/%m/%Y')
-        data['DataNascimento'] = data['DataNascimento'].strftime('%d/%m/%Y')
-        data['DataAssinatura'] = data['DataAssinatura'].strftime('%d/%m/%Y')
+        data['DataAtendimento'] = data['DataAtendimento'].strftime('%Y-%m-%d')
+        data['DataNascimento'] = data['DataNascimento'].strftime('%Y-%m-%d')
+        data['DataAssinatura'] = data['DataAssinatura'].strftime('%Y-%m-%d')
 
     return data_list
 
-def save_sabin_data_one_json_file_by_date(sabin_data):
-    """
-    Save the Sabin data to a JSON file, one file per date.
-
-    Args:
-        sabin_data (list of dict): The data to be saved by date.
-    """
-
-    # Retrieve all dates from the sabin data
-    all_dates = set(data['DataAtendimento'] for data in sabin_data)
-
-    for date in all_dates:
-
-        # Filter data for the specific date
-        date_data = [
-            data
-            for data in sabin_data
-            if data['DataAtendimento'] == date
-        ]
-
-        # Save JSON in /data/sabin/sabin_<date>.json
-        file_path = f"/data/sabin/sabin_{date.replace('/', '-')}.json"
-        with open(file_path, "w") as file:
-            file.write( json.dumps(date_data, ensure_ascii=False) )
-
-def save_sabin_data(sabin_data):
-    """
-    Save the Sabin data to the database.
-
-    Args:
-        sabin_data (SabinDataList): The data to be saved.
-    """
-
-    # Transform SabinDataList to a list of dictionaries
-    data_list = format_sabin_data_json(sabin_data)
-
-    # Save one JSON file per date
-    save_sabin_data_one_json_file_by_date(data_list)
-
-    # Save the Sabin data into the API
-    send_sabin_files_to_server_api()
-
-def list_sent_sabin_files():
+def list_sabin_sent_files():
     """
     List the files that have been sent to the server API.
     """
@@ -119,7 +99,7 @@ def send_sabin_files_to_server_api():
     logger = manager_interface.logger
 
     all_sabin_files = os.listdir("/data/sabin")
-    sent_files = list_sent_sabin_files()
+    sent_files = list_sabin_sent_files()
 
     for filename in all_sabin_files:
         if filename in sent_files:

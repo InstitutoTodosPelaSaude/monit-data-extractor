@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, UploadFile, File, HTTPException
 from http import HTTPStatus
 
-from crud import save_sabin_data
+from crud import save_sabin_data_flow
 
 from schema import SabinDataList
 from datetime import datetime
@@ -23,6 +23,6 @@ def post_sabin_data(
         sabin_data (SabinDataList): The data to be saved.
     """
     
-    save_sabin_data(sabin_data)
+    save_sabin_data_flow(sabin_data)
 
     return {"data": sabin_data}
