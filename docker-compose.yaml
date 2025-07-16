@@ -1,4 +1,3 @@
-version: '3'
 services:
   manager:
     build: ./manager
@@ -49,3 +48,16 @@ services:
       - .env
     volumes:
       - ./sivep-extractor/app:/app
+
+  monit-collector:
+    build:
+      context: ./monit-collector
+      args:
+          MANAGER_ENDPOINT: ${MANAGER_ENDPOINT}
+    env_file:
+      - .env
+    volumes:
+      - ./monit-collector/app:/app
+      - ./monit-collector/data:/data
+    ports:
+      - 8215:8000
