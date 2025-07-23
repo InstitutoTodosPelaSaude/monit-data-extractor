@@ -16,9 +16,10 @@ def save_sabin_data_flow(sabin_data):
     # Transform SabinDataList to a list of dictionaries
     sabin_data_list = format_sabin_data_json(sabin_data)
 
-    # Save one JSON file per date
-    current_date = datetime.now().strftime("%Y-%m-%d")
-    file_path = f"/data/sabin/sabin_{current_date}.json"
+    # Save one JSON file per timestamp with milliseconds
+    now = datetime.now()
+    file_name = f"sabin_{now.strftime('%Y-%m-%d_%H-%M-%S')}_{int(now.microsecond/1000):03d}.json"
+    file_path = f"/data/sabin/{file_name}"
 
     # Save the Sabin data to a JSON file
     with open(file_path, "w") as file:
