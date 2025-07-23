@@ -2,3 +2,4 @@ credentials.json
 emails.json
 token.json
 last_download_time*
+last_downloaded_files*
