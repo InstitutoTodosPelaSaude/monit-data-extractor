@@ -1,17 +1,20 @@
 from fastapi import FastAPI, Depends, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
 from http import HTTPStatus
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import random
 
 from sqlalchemy.orm import Session
 
 from models import get_db
 from models import Log, File as FileDB, Status
-from models import LogModel, FileModel, StatusUpdateModel
+from models import LogModel, FileModel, StatusUpdateModel, LabFilesUploadedModel
 from pydantic import ValidationError
 
-from minio_connection import get_minio_client, upload_file_to_folder
+from minio_connection import get_minio_client, upload_file_to_folder, list_files_in_folder
+from matrices import list_matrices
 
 import os
 import json
@@ -20,6 +23,14 @@ from slack_sdk.errors import SlackApiError
 from models import SlackMessageModel
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 async def root():
@@ -136,7 +147,64 @@ async def upload_file(
 
     return new_file
 
+@app.get("/files", response_model=list[LabFilesUploadedModel])
+async def get_files(db: Session = Depends(get_db)):
 
+    labs_to_ignore = ['DBMOL', 'DASA']
+    all_labs = [
+        'EINSTEIN',
+        'FLEURY',
+        'HILAB',
+        'HLAGYN',
+        'SABIN',
+        'TARGET',
+        'HPARDINI',
+        'DBMOL',
+        'DASA',
+    ]
+    lab_files_uploaded: dict[str, LabFilesUploadedModel] = {}
+
+    last_friday = lambda: datetime.today() - timedelta(days=(datetime.today().weekday() - 4) % 7)
+    last_friday_date = last_friday()
+
+    for lab in all_labs:
+        lab = lab.upper()
+        lab_files_uploaded[lab] = LabFilesUploadedModel(
+            lab_name=lab,
+            status="PENDING",
+            files_last_week=[]
+        )
+
+        if lab in labs_to_ignore:
+            lab_files_uploaded[lab].status = "NOT APPLICABLE"
+
+    # Read all files since last friday
+    files = db.query(FileDB).filter(FileDB.upload_ts >= last_friday_date).all()
+
+    for file in files:
+        lab_name = file.organization.upper()
+        lab_files_uploaded[lab_name] = LabFilesUploadedModel(
+            lab_name=lab_name,
+            status="OK",
+            files_last_week=[]
+        )
+        lab_files_uploaded[lab_name].files_last_week.append(FileModel.from_orm(file))
+
+    return list(lab_files_uploaded.values())
+
+# ====================
+# MATRICES
+# ====================
+@app.get("/matrices")
+async def upload_file(
+    minio_client = Depends(get_minio_client)
+):
+    
+    matrices = list_matrices(minio_client)
+    return {
+        'data': matrices,
+    }
+    
 # ====================
 # NOTIFICATIONS
 # ====================
