@@ -2,3 +2,5 @@
 *.tsv
 __pycache__
 .env
+
+!infodengue-extractor/app/ibge_municipios_full.csv
