@@ -11,35 +11,26 @@ from itertools import product
 # Save and handle logs
 from log import ManagerInterface
 
-GEOCODE_TO_UF = {
-    1200401: "AC",
-    2704302: "AL",
-    1302603: "AM",
-    1600303: "AP",
-    2927408: "BA",
-    2304400: "CE",
-    5300108: "DF",
-    3205309: "ES",
-    5208707: "GO",
-    2111300: "MA",
-    5103403: "MT",
-    5002704: "MS",
-    3106200: "MG",
-    1501402: "PA",
-    2507507: "PB",
-    4115200: "PR",
-    2611606: "PE",
-    2207702: "PI",
-    3304557: "RJ",
-    2408102: "RN",
-    4314902: "RS",
-    1100023: "RO",
-    1400100: "RR",
-    4205407: "SC",
-    3550308: "SP",
-    2800308: "SE",
-    1721000: "TO"
-}
+# Prepare city and state information from ibge file
+ibge_df = pd.read_csv("data/ibge_municipios_full.csv", dtype=str)
+
+cities_to_extract = dict()
+for index, row in ibge_df.iterrows():
+    city_data = dict({
+        "name": row['municipio_nome'],
+        "state_code": row['uf_sigla'],
+    })
+    city_key = row['municipio_codigo']
+    cities_to_extract[city_key] = city_data
+assert len(cities_to_extract) == ibge_df.shape[0], "Duplicate city codes found in ibge file"
+
+cities_to_extract_per_uf = dict()
+for city_key, city_data in cities_to_extract.items():
+    uf = city_data['state_code']
+    if uf not in cities_to_extract_per_uf:
+        cities_to_extract_per_uf[uf] = dict()
+    cities_to_extract_per_uf[uf][city_key] = city_data
+assert sum([len(cities) for uf, cities in cities_to_extract_per_uf.items()]) == len(cities_to_extract), "Mismatch in city counts"
 
 UF_TO_NAME = {
     "AC": "Acre",              "AL": "Alagoas",              "AM": "Amazonas",
@@ -124,25 +115,27 @@ if __name__ == "__main__":
     # Application
     # ==================================
     NUMBER_OF_PREVIOUS_EPIWEEKS_TO_COLLECT = 8
-    all_epiweeks = [current_epiweek-i for i in range(0, NUMBER_OF_PREVIOUS_EPIWEEKS_TO_COLLECT+1)]
-    all_years    = [current_year]
-    all_ufs_dataframes = []
     for disease in diseases:
         logger.info(f"Running for {disease}")
-        for year, epiweek in product(all_years, all_epiweeks):
-            for geocode, uf in GEOCODE_TO_UF.items():
-                logger.info(f"Requesting {disease} SE{epiweek:02d} - {year} {uf}")
-                infodengue_df = get_data_infodengue(geocode, disease, epiweek, epiweek, year, year)
-                
+        for uf in cities_to_extract_per_uf.keys():
+            all_ufs_dataframes = []
+            counter = 0
+            for geocode, city_data in cities_to_extract_per_uf[uf].items():
+                logger.info(f"Requesting {disease} data for {uf} ({counter+1}/{len(cities_to_extract_per_uf[uf])})")
+                counter += 1
+                infodengue_df = get_data_infodengue(geocode, disease, 1, current_epiweek, 2016, current_year)
+
                 if infodengue_df is None:
-                    logger.warning(f"API returned 'None' {disease} SE{epiweek:02d} - {year} {uf}")
+                    logger.warning(f"API returned 'None' {disease} SE{current_epiweek:02d} - {current_year} {uf} - {geocode} ({city_data['name']})")
                     continue
 
                 if infodengue_df.shape[0] < 1:
-                    logger.warning(f"No data found for {disease} SE{epiweek:02d} - {year} {uf}")
+                    logger.warning(f"No data found for {disease} SE{current_epiweek:02d} - {current_year} {uf} - {geocode} ({city_data['name']})")
                     continue
             
                 infodengue_df['disease'] = disease
+                infodengue_df['city_ibge_code'] = geocode
+                infodengue_df['city'] = city_data['name']
                 infodengue_df['state_code'] = uf
                 infodengue_df['state'] = infodengue_df['state_code'].map(UF_TO_NAME)
                 infodengue_df['region'] = infodengue_df['state_code'].map(UF_TO_REGION)
@@ -151,15 +144,15 @@ if __name__ == "__main__":
                 all_ufs_dataframes.append(infodengue_df)
                 
             if len(all_ufs_dataframes) == 0:
-                logger.warning(f"No data found for {disease} SE{epiweek:02d} - {year}")
+                logger.warning(f"No data found for {disease} SE{current_epiweek:02d} - {current_year} {uf}")
                 all_ufs_dataframes = []
                 continue
             
             all_ufs_infodengue_df = pd.concat(all_ufs_dataframes)
             all_ufs_dataframes = []
-            filename = f"INFODENGUE_{year}_SE_{epiweek:02d}_{disease}.csv"
+            filename = f"INFODENGUE_{uf}_{disease}_until_SE{current_epiweek:02d}_{current_year}.csv"
             
-            logger.info(f"Finished extracting data for {disease} SE{epiweek:02d} - {year}")
+            logger.info(f"Finished extracting data for {disease} UF {uf}. DataFrame shape: {all_ufs_infodengue_df.shape}")
             logger.info(f"Saving file {filename}...")
 
             buffer = io.BytesIO()
