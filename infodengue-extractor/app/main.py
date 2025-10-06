@@ -57,7 +57,7 @@ BASE_URL = "https://info.dengue.mat.br/api/alertcity"
 
 def get_data_infodengue(geocode, disease, ew_start, ew_end, ey_start, ey_end):
     
-    columns = ['data_iniSE', 'SE', 'casos_est', 'casos_est_min', 'casos_est_max', 'casos']
+    columns = ['data_iniSE', 'SE', 'casos_est', 'casos_est_min', 'casos_est_max', 'casos', 'casprov', 'notif_accum_year', 'casconf']
     url = (
         f"{BASE_URL}?geocode={geocode}&disease={disease}&format=csv"
         f"&ew_start={ew_start}&ew_end={ew_end}&ey_start={ey_start}&ey_end={ey_end}"
@@ -123,7 +123,7 @@ if __name__ == "__main__":
             for geocode, city_data in cities_to_extract_per_uf[uf].items():
                 logger.info(f"Requesting {disease} data for {uf} ({counter+1}/{len(cities_to_extract_per_uf[uf])})")
                 counter += 1
-                infodengue_df = get_data_infodengue(geocode, disease, 1, current_epiweek, 2016, current_year)
+                infodengue_df = get_data_infodengue(geocode, disease, 1, current_epiweek, 2023, current_year)
 
                 if infodengue_df is None:
                     logger.warning(f"API returned 'None' {disease} SE{current_epiweek:02d} - {current_year} {uf} - {geocode} ({city_data['name']})")
