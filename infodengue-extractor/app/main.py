@@ -12,7 +12,9 @@ from itertools import product
 from log import ManagerInterface
 
 # Prepare city and state information from ibge file
-ibge_df = pd.read_csv("ibge_municipios_full.csv", dtype=str)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+file_path = os.path.join(BASE_DIR, "ibge_municipios_full.csv")
+ibge_df = pd.read_csv(file_path, dtype=str)
 
 cities_to_extract = dict()
 for index, row in ibge_df.iterrows():
