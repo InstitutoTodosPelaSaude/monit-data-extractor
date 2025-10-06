@@ -15,9 +15,9 @@ RUN apt-get update && apt-get install -y cron
 RUN mkdir -p /app/log
 RUN touch /app/log/cron.log
 
-# 0 9 * * *
+# 0 6,18 * * 1,2
 RUN touch /etc/cron.d/infodengue-cron-job
-RUN echo "0 9 * * * MANAGER_ENDPOINT=$MANAGER_ENDPOINT /usr/local/bin/python /app/main.py >> /app/log/cron.log 2>&1" >> /etc/cron.d/infodengue-cron-job
+RUN echo "0 6,18 * * 1,2 MANAGER_ENDPOINT=$MANAGER_ENDPOINT /usr/local/bin/python /app/main.py >> /app/log/cron.log 2>&1" >> /etc/cron.d/infodengue-cron-job
 RUN chmod 0644 /etc/cron.d/infodengue-cron-job
 RUN crontab /etc/cron.d/infodengue-cron-job
 
