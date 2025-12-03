@@ -100,6 +100,10 @@ class FileModel(BaseModel):
     class Config:
         from_attributes = True
 
+class LabFilesUploadedModel(BaseModel):
+    lab_name: str
+    status: Literal["OK", "PENDING", "NOT APPLICABLE"]
+    files_last_week: list[FileModel]
 
 class SlackMessageModel(BaseModel):
     blocks: list[dict]
