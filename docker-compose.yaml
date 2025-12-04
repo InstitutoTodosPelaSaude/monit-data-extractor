@@ -8,6 +8,9 @@ services:
       - ./manager/data:/data
     ports:
       - 8214:8000
+    networks:
+      - default
+      - shared-network
 
   example-extractor:
     build: ./example-extractor
@@ -15,6 +18,9 @@ services:
       - .env
     volumes:
       - ./example-extractor/app:/app
+    networks:
+      - default
+      - shared-network
 
   gmail-extractor:
     build: 
@@ -28,6 +34,9 @@ services:
     volumes:
       - ./gmail-extractor/app:/app
       - ./gmail-extractor/data:/data
+    networks:
+      - default
+      - shared-network
 
   infodengue-extractor:
     build: 
@@ -38,6 +47,9 @@ services:
       - .env
     volumes:
       - ./infodengue-extractor/app:/app
+    networks:
+      - default
+      - shared-network
 
   sivep-extractor:
     build: 
@@ -48,6 +60,9 @@ services:
       - .env
     volumes:
       - ./sivep-extractor/app:/app
+    networks:
+      - default
+      - shared-network
 
   monit-collector:
     build:
@@ -61,3 +76,10 @@ services:
       - ./monit-collector/data:/data
     ports:
       - 8215:8000
+    networks:
+      - default
+      - shared-network
+
+networks:
+  shared-network:
+    external: true
