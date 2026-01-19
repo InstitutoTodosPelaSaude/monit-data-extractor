@@ -4,3 +4,8 @@ __pycache__
 .env
 
 !infodengue-extractor/app/ibge_municipios_full.csv
+
+monit-collector/data/
+.DS_Store
+*.csv.gz
+make_sabin_example_file.py

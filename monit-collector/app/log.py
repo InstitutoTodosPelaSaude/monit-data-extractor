@@ -1,7 +1,7 @@
 import logging
-import requests
-from io import BytesIO
 from datetime import datetime
+
+import requests
 
 logging.basicConfig(
     level=logging.DEBUG,  # Set the minimum logging level
@@ -60,10 +60,12 @@ class ManagerInterface():
         try:
             response = requests.get(f"{self.endpoint}/log", params={'app_name': self.app_name})
             response.raise_for_status()
+            self.session_id = response.json().get('session_id')
         except Exception as e:
             self.logger.error(f"Unable to retrieve a Logs' Session ID from the API. {e}")
+            self.session_id = None
+            return
 
-        self.session_id = response.json()['session_id']
         self.logger.info(f"Session id: '{self.session_id}'")
 
         api_handler = APILogHandler(self.endpoint, session_id=self.session_id, app_name=self.app_name)
@@ -72,12 +74,17 @@ class ManagerInterface():
         self.logger.addHandler(api_handler)
 
     def upload_file(
-            self, 
-            organization: str, 
-            project: str, 
-            file_content: BytesIO,
-            file_name: str
+            self,
+            organization: str,
+            project: str,
+            file_content,
+            file_name: str,
+            content_type: str = "text/csv"
         ):
+
+        if not self.session_id:
+            self.logger.error("No session_id available; skipping upload.")
+            return
 
         response = requests.post(
             f"{self.endpoint}/file", 
@@ -87,7 +94,7 @@ class ManagerInterface():
                 "project": project
             }, 
             files={
-                "file": (file_name, file_content, 'text/csv')
+                "file": (file_name, file_content, content_type)
             }
         )
 
