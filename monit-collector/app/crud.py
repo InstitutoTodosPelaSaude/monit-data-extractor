@@ -58,6 +58,31 @@ def save_sabin_gzip_upload(upload_file: UploadFile) -> str:
     return filename
 
 
+def save_sabin_csv_bytes(data: bytes) -> str:
+    """
+    Persist raw CSV bytes to disk.
+
+    Returns:
+        str: Saved filename.
+    """
+
+    ensure_sabin_dir()
+    now = datetime.now()
+    filename = f"sabin_{now.strftime('%Y-%m-%d_%H-%M-%S')}_{int(now.microsecond/1000):03d}.csv"
+    file_path = os.path.join(SABIN_DIR, filename)
+
+    with open(file_path, "wb") as dest:
+        dest.write(data)
+
+    try:
+        validate_csv_header_plain(file_path)
+    except Exception:
+        os.remove(file_path)
+        raise
+
+    return filename
+
+
 def validate_csv_header(file_path: str) -> None:
     """
     Validate that the CSV (gzip) contains the required columns.
@@ -65,6 +90,19 @@ def validate_csv_header(file_path: str) -> None:
     """
     with gzip.open(file_path, "rt", newline="") as gz_file:
         reader = csv.DictReader(gz_file)
+        fieldnames = reader.fieldnames or []
+        missing = [col for col in REQUIRED_COLUMNS if col not in fieldnames]
+        if missing:
+            raise ValueError(f"Missing required columns: {', '.join(missing)}")
+
+
+def validate_csv_header_plain(file_path: str) -> None:
+    """
+    Validate that the CSV (plain) contains the required columns.
+    Only reads the header to avoid loading the whole file.
+    """
+    with open(file_path, "r", newline="", encoding="utf-8") as csv_file:
+        reader = csv.DictReader(csv_file)
         fieldnames = reader.fieldnames or []
         missing = [col for col in REQUIRED_COLUMNS if col not in fieldnames]
         if missing:
