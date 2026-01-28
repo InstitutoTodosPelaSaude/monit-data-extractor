@@ -210,7 +210,7 @@ def send_sabin_files_to_server_api():
         if (
             filename in sent_files
             or not filename.startswith("sabin_")
-            or not filename.endswith(".csv.gz")
+            or not filename.endswith(".csv")
         ):
             continue
 
@@ -226,7 +226,7 @@ def send_sabin_files_to_server_api():
                     project="arbo",
                     file_content=file_content,
                     file_name=filename,
-                    content_type="application/gzip",
+                    content_type="text/csv",
                 )
                 logger.info(f"File {filename} sent to 'arbo' project.")
                 file_content.seek(0)
@@ -235,7 +235,7 @@ def send_sabin_files_to_server_api():
                     project="respat",
                     file_content=file_content,
                     file_name=filename,
-                    content_type="application/gzip",
+                    content_type="text/csv",
                 )
                 logger.info(f"File {filename} sent to 'respat' project.")
             except Exception as exc:
