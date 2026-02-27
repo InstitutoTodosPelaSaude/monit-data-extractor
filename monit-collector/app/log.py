@@ -97,6 +97,7 @@ class ManagerInterface():
                 "file": (file_name, file_content, content_type)
             }
         )
+        response.raise_for_status()
 
     def close_session(self, status="COMPLETED"):
         response = requests.put(
